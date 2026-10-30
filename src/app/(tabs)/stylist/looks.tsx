@@ -1,11 +1,15 @@
+import { Button, Form, HStack, Image, ProgressView, Section, Spacer, Text, TextField, VStack, ZStack, useNativeState } from '@expo/ui/swift-ui';
+import {
+  background, buttonStyle, controlSize, disabled, foregroundStyle, frame, glassEffect, labelStyle, listRowBackground,
+  listRowInsets, onSubmit, opacity, padding, shapes, submitLabel,
+} from '@expo/ui/swift-ui/modifiers';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { LOOK_ROUNDS } from '@/data';
 import { shortDay, useApp } from '@/store';
-import { C, T } from '@/theme';
-import { Button, Card, Figure, Icon, IconButton, Pill, Txt, s } from '@/ui';
+import { C } from '@/theme';
+import { Actions, CTA, Figure, IconCTA, Pill, RN, Screen, f, sub, setNative } from '@/ui';
 
 export default function Looks() {
   const { prompt, event: eventId } = useLocalSearchParams<{ prompt: string; event?: string }>();
@@ -15,6 +19,7 @@ export default function Looks() {
   const [busy, setBusy] = useState(false);
   const [round, setRound] = useState(0);
   const [i, setI] = useState(0);
+  const refineText = useNativeState('');
   const [refine, setRefine] = useState('');
 
   useEffect(() => {
@@ -35,6 +40,7 @@ export default function Looks() {
 
   const regenerate = () => {
     setBusy(true);
+    setNative(refineText, '');
     setRefine('');
     setTimeout(() => {
       setRound((r) => (r + 1) % LOOK_ROUNDS.length);
@@ -51,36 +57,39 @@ export default function Looks() {
   const openPieces = () =>
     router.push({ pathname: '/pieces', params: { pieces: look.pieces.join(','), title: `Look ${i + 1} · ${look.name}`, date: event.date } });
 
+  const bubble = (
+    <HStack>
+      <Spacer minLength={60} />
+      <Text modifiers={[foregroundStyle('white'), padding({ horizontal: 14, vertical: 9 }), background(C.blue, shapes.roundedRectangle({ cornerRadius: 18, roundedCornerStyle: 'continuous' }))]}>{prompt}</Text>
+    </HStack>
+  );
+
   if (step < 3) {
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.pad}>
+      <Screen>
         <Stack.Screen options={{ title: 'New look', headerLargeTitleEnabled: false }} />
-        <Bubble text={prompt} />
-        <Card style={{ gap: 12 }}>
-          <View style={s.rowBetween}>
-            <Txt v="headline">Putting your looks together</Txt>
-            <Txt v="footnote" c={C.blue}>{Math.min(step + 1, 3)} of 3</Txt>
-          </View>
-          <View style={{ height: 4, borderRadius: 2, backgroundColor: C.fill }}>
-            <View style={{ height: 4, borderRadius: 2, backgroundColor: C.blue, width: `${((step + 1) / 3) * 100}%` }} />
-          </View>
-          {STEPS.map(([title, sub], n) => (
-            <View key={title} style={{ flexDirection: 'row', gap: 10, opacity: n <= step ? 1 : 0.35 }}>
-              {n < step ? <Icon name="checkmark.circle.fill" color={C.ok} size={20} /> : <ActivityIndicator size="small" animating={n === step} color={C.blue} style={{ width: 20 }} />}
-              <View style={{ flex: 1 }}>
-                <Txt v="subheadBold">{title}</Txt>
-                <Txt v="footnote" c={C.secondary}>{sub}</Txt>
-              </View>
-            </View>
-          ))}
-        </Card>
-        <Button title="Cancel" kind="gray" onPress={() => router.back()} />
-      </ScrollView>
+        <Form>
+          <Section modifiers={[listRowBackground('clear'), listRowInsets({ top: 0, leading: 0, bottom: 0, trailing: 0 })]}>{bubble}</Section>
+          <Section header={<HStack><Text>Putting your looks together</Text><Spacer /><Text>{`${Math.min(step + 1, 3)} of 3`}</Text></HStack>}>
+            <ProgressView value={(step + 1) / 3} />
+            {STEPS.map(([title, subtitle], n) => (
+              <HStack key={title} spacing={10} alignment="top" modifiers={[opacity(n <= step ? 1 : 0.35)]}>
+                {n < step ? <Image systemName="checkmark.circle.fill" color={C.ok} size={20} /> : n === step ? <ProgressView modifiers={[frame({ width: 20 })]} /> : <Image systemName="circle" color={C.separator} size={20} />}
+                <VStack alignment="leading" spacing={2}>
+                  <Text modifiers={[f('subheadline', 'semibold')]}>{title}</Text>
+                  <Text modifiers={sub}>{subtitle}</Text>
+                </VStack>
+              </HStack>
+            ))}
+          </Section>
+          <Actions><CTA label="Cancel" kind="plain" onPress={() => router.back()} /></Actions>
+        </Form>
+      </Screen>
     );
   }
 
   return (
-    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={100}>
+    <Screen>
       <Stack.Screen
         options={{
           title: `${event.dressCode} looks`,
@@ -90,70 +99,62 @@ export default function Looks() {
           ],
         }}
       />
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.pad} keyboardDismissMode="interactive">
-        <Txt v="footnote" c={C.secondary} style={{ textAlign: 'center' }}>For {event.title} · {day}</Txt>
+      <VStack spacing={0}>
+        <Form>
+          <Section footer={<Text modifiers={sub}>{`For ${event.title} · ${day}`}</Text>}>
+            <ZStack alignment="top" modifiers={[frame({ height: 340 })]}>
+              <VStack modifiers={[frame({ maxWidth: Infinity }), frame({ height: 340 })]}>
+                {busy ? (
+                  <VStack spacing={8}>
+                    <ProgressView />
+                    <Text modifiers={[f('headline')]}>Styling 3 new looks…</Text>
+                    <Text modifiers={sub}>Your current looks are saved in Earlier</Text>
+                  </VStack>
+                ) : (
+                  <RN><Figure src={look.avatar} height={290} /></RN>
+                )}
+              </VStack>
+              <HStack spacing={8}>
+                <Pill label={busy ? 'Regenerating' : `Look ${i + 1} of 3`} />
+                <Spacer />
+                <IconCTA label={liked[look.id] ? 'Remove from Liked' : 'Save to Liked'} icon={liked[look.id] ? 'heart.fill' : 'heart'} size="small"
+                  onPress={() => setLiked((l) => ({ ...l, [look.id]: !l[look.id] }))} />
+                <CTA label="Try on" icon="figure.stand" kind="gray" small wide={false} onPress={tryOn} />
+              </HStack>
+              {!busy && (
+                <HStack modifiers={[frame({ height: 340 })]}>
+                  <IconCTA label="Previous look" icon="chevron.left" disabled={!i} onPress={() => setI(Math.max(0, i - 1))} />
+                  <Spacer />
+                  <IconCTA label="Next look" icon="chevron.right" disabled={i >= 2} onPress={() => setI(Math.min(2, i + 1))} />
+                </HStack>
+              )}
+            </ZStack>
+            <Button onPress={openPieces} modifiers={[disabled(busy)]}>
+              <HStack spacing={6}>
+                <Spacer />
+                <Image systemName="chevron.up" size={13} />
+                <Text modifiers={[f('subheadline', 'semibold')]}>
+                  {busy ? 'Hang on, this takes a few seconds' : `${pieces.length} pieces · ${attention ? `${attention} need${attention > 1 ? '' : 's'} attention` : 'all ready'}`}
+                </Text>
+                <Spacer />
+              </HStack>
+            </Button>
+          </Section>
+          <Actions>
+            <HStack spacing={10}>
+              <CTA label="New looks" icon="arrow.clockwise" kind="gray" onPress={regenerate} disabled={busy} />
+              <CTA label={`Save to ${day.replace(/^\w+ /, '')}`} icon="calendar" onPress={save} disabled={busy} />
+            </HStack>
+          </Actions>
+        </Form>
 
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <View style={{ height: 340, alignItems: 'center', justifyContent: 'center' }}>
-            {busy ? (
-              <View style={{ alignItems: 'center', gap: 8 }}>
-                <ActivityIndicator size="large" color={C.blue} />
-                <Txt v="headline">Styling 3 new looks…</Txt>
-                <Txt v="footnote" c={C.secondary}>Your current looks are saved in Earlier</Txt>
-              </View>
-            ) : (
-              <Figure src={look.avatar} height={290} />
-            )}
-            <View style={{ position: 'absolute', top: 12, left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Pill label={busy ? 'Regenerating' : `Look ${i + 1} of 3`} />
-              <View style={{ flex: 1 }} />
-              <IconButton name={liked[look.id] ? 'heart.fill' : 'heart'} label="Save to Liked" size={32}
-                color={liked[look.id] ? C.red : C.label} onPress={() => setLiked((l) => ({ ...l, [look.id]: !l[look.id] }))} />
-              <Button title="Try on" icon="arrow.triangle.2.circlepath" kind="gray" small onPress={tryOn} />
-            </View>
-            {!busy && (
-              <>
-                <View style={{ position: 'absolute', left: 10 }}>
-                  <IconButton name="chevron.left" label="Previous look" bg={C.bg} color={i ? C.label : C.tertiary} onPress={() => setI(Math.max(0, i - 1))} />
-                </View>
-                <View style={{ position: 'absolute', right: 10 }}>
-                  <IconButton name="chevron.right" label="Next look" bg={C.bg} color={i < 2 ? C.label : C.tertiary} onPress={() => setI(Math.min(2, i + 1))} />
-                </View>
-                <View style={{ position: 'absolute', bottom: 10, flexDirection: 'row', gap: 6 }}>
-                  {[0, 1, 2].map((d) => (
-                    <View key={d} style={{ width: d === i ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: d === i ? C.label : C.separator }} />
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-          <Pressable onPress={openPieces} disabled={busy} style={{ height: 48, borderTopWidth: 0.5, borderColor: C.separator, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <Icon name="chevron.up" size={13} weight="semibold" />
-            <Txt v="subheadBold">
-              {busy ? 'Hang on, this takes a few seconds' : `${pieces.length} pieces · ${attention ? `${attention} need${attention > 1 ? "" : "s"} attention` : 'all ready'}`}
-            </Txt>
-          </Pressable>
-        </Card>
-
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Button title="New looks" icon="arrow.clockwise" kind="gray" onPress={regenerate} disabled={busy} style={{ flex: 1 }} />
-          <Button title={`Save to ${day.replace(/^\w+ /, '')}`} icon="calendar" onPress={save} disabled={busy} style={{ flex: 1.4 }} />
-        </View>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 22, paddingLeft: 16, paddingRight: 6, height: 46 }}>
-          <TextInput value={refine} onChangeText={setRefine} placeholder={'Refine: “no belt”, “something lighter”'} placeholderTextColor={C.tertiary}
-            style={{ ...T.subhead, flex: 1 }} returnKeyType="send" onSubmitEditing={() => refine.trim() && regenerate()} />
-          <IconButton name="arrow.up" label="Refine looks" size={32} bg={refine ? C.blue : C.label} color="#fff" onPress={() => refine.trim() && regenerate()} />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
-
-function Bubble({ text }: { text: string }) {
-  return (
-    <View style={{ alignSelf: 'flex-end', maxWidth: '80%', backgroundColor: C.blue, borderRadius: 18, paddingHorizontal: 14, paddingVertical: 9 }}>
-      <Txt c="#fff">{text}</Txt>
-    </View>
+        <HStack spacing={8} modifiers={[padding({ leading: 16, trailing: 6, vertical: 6 }), glassEffect({ glass: { variant: 'regular' }, shape: 'capsule' }), padding({ horizontal: 16, bottom: 8 })]}>
+          <TextField text={refineText} onTextChange={setRefine} placeholder="Refine: “no belt”, “something lighter”"
+            modifiers={[submitLabel('send'), onSubmit(() => refineText.value.trim() && regenerate()), padding({ vertical: 8 })]} />
+          <Button label="Refine looks" systemImage="arrow.up" onPress={() => refine.trim() && regenerate()}
+            modifiers={[labelStyle('iconOnly'), buttonStyle('borderedProminent'), controlSize('regular'), disabled(!refine.trim() || busy)]} />
+        </HStack>
+      </VStack>
+    </Screen>
   );
 }

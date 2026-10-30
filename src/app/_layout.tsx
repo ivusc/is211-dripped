@@ -24,7 +24,7 @@ function RootStack() {
           <Stack.Screen name="save-look" options={{ ...sheet, sheetAllowedDetents: [1] }} />
           <Stack.Screen name="new-event" options={{ ...sheet, sheetAllowedDetents: [1] }} />
           <Stack.Screen name="filters" options={{ ...sheet, sheetAllowedDetents: [0.75, 1] }} />
-          <Stack.Screen name="ask-stylist" options={{ ...sheet, sheetAllowedDetents: [0.55, 1] }} />
+          <Stack.Screen name="ask-stylist" options={{ ...sheet, sheetAllowedDetents: [0.7, 1] }} />
           <Stack.Screen name="menu" options={{ ...sheet, sheetAllowedDetents: [0.75, 1] }} />
           <Stack.Screen name="add-item" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: '#1C1C1E' } }} />
           <Stack.Screen name="body-scan" options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: '#1C1C1E' } }} />

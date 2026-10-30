@@ -111,7 +111,7 @@ export const SEED_ITEMS: Item[] = [
   item('grey-hoodie', 'Grey hoodie', 'Tops', 'Hoodie', { tags: ['Casual', 'Campus'] }),
   item('denim-jacket', 'Denim jacket', 'Tops', 'Jacket', { material: 'Denim', colour: 'Blue', tags: ['Casual'] }),
   item('white-shirt', 'White dress shirt', 'Tops', 'Dress shirt', { material: 'Poly cotton', lastWorn: '20 Dec · Wedding', tags: ['Formal', 'Smart casual'] }),
-  item('cream-knit', 'Cream knit', 'Tops', 'Sweater', { material: 'Wool', wash: true, tags: ['Smart casual'] }),
+  item('cream-knit', 'Cream knit', 'Tops', 'Sweater', { material: 'Wool', wash: true, iron: true, tags: ['Smart casual'] }),
   item('olive-overshirt', 'Olive overshirt', 'Tops', 'Overshirt', { iron: true, tags: ['Casual'] }),
   item('striped-shirt', 'Striped shirt', 'Tops', 'Shirt', { colour: 'Blue', iron: true, tags: ['Smart casual'] }),
   item('green-polo', 'Green polo', 'Tops', 'Polo', { wash: true, tags: ['Casual', 'Campus'] }),

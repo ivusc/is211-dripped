@@ -1,12 +1,13 @@
+import { Button, Form, HStack, Image, Section, Spacer, Text, VStack } from '@expo/ui/swift-ui';
+import { background, buttonStyle, foregroundStyle, frame, labelStyle, lineLimit, shapes } from '@expo/ui/swift-ui/modifiers';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
 
 import { TODAY } from '@/data';
 import { MonthGrid, addMonths, monthOf, monthTitle } from '@/month';
-import { parse, shortDay, useApp, ymd } from '@/store';
+import { fmt, parse, useApp, ymd } from '@/store';
 import { C } from '@/theme';
-import { Button, Caption, Card, Group, IconButton, Pill, Row, Txt, s } from '@/ui';
+import { Pill, RN, Screen, f, sub, tertiary } from '@/ui';
 
 export default function Calendar() {
   const { events, items } = useApp();
@@ -17,7 +18,7 @@ export default function Calendar() {
   const week = events.filter((e) => e.date >= TODAY && e.date <= ymd(weekEnd)).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.pad}>
+    <Screen>
       <Stack.Screen
         options={{
           title: monthTitle(month),
@@ -27,39 +28,59 @@ export default function Calendar() {
           ],
         }}
       />
-      <Card style={{ gap: 8 }}>
-        <View style={s.rowBetween}>
-          <Button title="Today" kind="plain" small onPress={() => setMonth(monthOf(TODAY))} style={{ paddingHorizontal: 0 }} />
-          <View style={{ flexDirection: 'row', gap: 6 }}>
-            <IconButton name="chevron.left" label="Previous month" size={30} bg="transparent" color={C.blue} onPress={() => setMonth(addMonths(month, -1))} />
-            <IconButton name="chevron.right" label="Next month" size={30} bg="transparent" color={C.blue} onPress={() => setMonth(addMonths(month, 1))} />
-          </View>
-        </View>
-        <MonthGrid month={month} selected={TODAY} onSelect={(d) => router.push(`/calendar/day/${d}`)} />
-        <View style={{ flexDirection: 'row', gap: 16, justifyContent: 'center', paddingTop: 4 }}>
-          <Legend color={C.blue} label="Outfit planned" />
-          <Legend color="#F08A00" label="Needs an outfit" />
-        </View>
-      </Card>
+      <Form>
+        <Section
+          header={
+            <HStack>
+              <Button label="Today" onPress={() => setMonth(monthOf(TODAY))} />
+              <Spacer />
+              <HStack spacing={20}>
+                <Button label="Previous month" systemImage="chevron.left" onPress={() => setMonth(addMonths(month, -1))} modifiers={[labelStyle('iconOnly'), buttonStyle('borderless')]} />
+                <Button label="Next month" systemImage="chevron.right" onPress={() => setMonth(addMonths(month, 1))} modifiers={[labelStyle('iconOnly'), buttonStyle('borderless')]} />
+              </HStack>
+            </HStack>
+          }
+          footer={
+            <VStack alignment="leading" spacing={4}>
+              <HStack spacing={16}>
+                <Legend color={C.blue} label="Outfit planned" />
+                <Legend color="#F08A00" label="Needs an outfit" />
+              </HStack>
+              <Text modifiers={sub}>Synced with your iPhone calendar</Text>
+            </VStack>
+          }>
+          <RN fill><MonthGrid month={month} selected={TODAY} onSelect={(d) => router.push(`/calendar/day/${d}`)} /></RN>
+        </Section>
 
-      <Txt v="footnote" c={C.secondary} style={{ textAlign: 'center' }}>Synced with your iPhone calendar</Txt>
-
-      <Caption>This week</Caption>
-      <Group>
-        {week.map((e) => (
-          <Row key={e.id} title={e.title} subtitle={`${shortDay(e.date)} · ${e.time}`} chevron onPress={() => router.push(`/calendar/day/${e.date}`)}
-            right={e.optional ? <Pill label="Optional" /> : <Pill label={e.outfit ? 'Outfit planned' : 'No outfit'} tone={e.outfit ? 'blue' : 'warn'} />} />
-        ))}
-      </Group>
-    </ScrollView>
+        <Section title="This week">
+          {week.map((e) => (
+            <Button key={e.id} onPress={() => router.push(`/calendar/day/${e.date}`)} modifiers={[buttonStyle('plain')]}>
+              <HStack spacing={12}>
+                <VStack spacing={0} modifiers={[frame({ width: 46, height: 50 }), background(C.bg, shapes.roundedRectangle({ cornerRadius: 10, roundedCornerStyle: 'continuous' }))]}>
+                  <Text modifiers={[f('caption2', 'semibold'), foregroundStyle(e.date === TODAY ? C.blue : C.red)]}>{fmt(e.date, { weekday: 'short' }).toUpperCase()}</Text>
+                  <Text modifiers={[f('title3', 'semibold')]}>{`${parse(e.date).getDate()}`}</Text>
+                </VStack>
+                <VStack alignment="leading" spacing={3}>
+                  <Text>{e.title}</Text>
+                  <Text modifiers={[...sub, lineLimit(1)]}>{`${e.time} · ${e.dressCode}`}</Text>
+                  {e.optional ? <Pill label="Optional" /> : <Pill label={e.outfit ? 'Outfit planned' : 'Needs an outfit'} tone={e.outfit ? 'blue' : 'warn'} />}
+                </VStack>
+                <Spacer />
+                <Image systemName="chevron.right" modifiers={[f('footnote', 'semibold'), tertiary]} />
+              </HStack>
+            </Button>
+          ))}
+        </Section>
+      </Form>
+    </Screen>
   );
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color }} />
-      <Txt v="caption" c={C.secondary}>{label}</Txt>
-    </View>
+    <HStack spacing={5}>
+      <Image systemName="circle.fill" size={7} color={color} />
+      <Text modifiers={sub}>{label}</Text>
+    </HStack>
   );
 }

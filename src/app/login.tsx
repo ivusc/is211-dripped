@@ -1,16 +1,20 @@
+import { Button, Form, HStack, Image, SecureField, Section, Text, TextField, VStack } from '@expo/ui/swift-ui';
+import {
+  autocorrectionDisabled, background, buttonBorderShape, buttonStyle, controlSize, font, foregroundStyle, frame, kerning, keyboardType, listRowBackground,
+  multilineTextAlignment, padding, shapes, submitLabel, onSubmit, textContentType, textInputAutocapitalization, tint,
+} from '@expo/ui/swift-ui/modifiers';
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useApp } from '@/store';
-import { C, T } from '@/theme';
-import { Button, Group, Icon, Txt, s } from '@/ui';
+import { C } from '@/theme';
+import { Actions, CTA, Screen, f, secondary } from '@/ui';
 
 export default function Login() {
   const { setLoggedIn } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const ready = !!email && !!password && !busy;
 
   // ponytail: no auth backend — any non-empty email + password signs in.
   const logIn = () => {
@@ -18,54 +22,47 @@ export default function Login() {
     setTimeout(() => setLoggedIn(true), 1200);
   };
 
-  const field = { ...T.body, flex: 1, color: C.label } as const;
-
   return (
-    <SafeAreaView style={s.screen}>
-      {/* Scrolls instead of squashing when the keyboard is up. */}
-      <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24 }}>
-        <View style={{ alignItems: 'center', marginTop: 56, gap: 10 }}>
-          <View style={{ width: 76, height: 76, borderRadius: 18, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' }}>
-            <Icon name="hanger" size={44} color="#fff" />
-          </View>
-          <Txt v="largeTitle" style={{ fontWeight: '800', letterSpacing: 3 }}>DRIPPED</Txt>
-          <Txt v="subhead" c={C.secondary}>Your wardrobe, styled for every event.</Txt>
-        </View>
+    <Screen>
+      <Form>
+        <Section modifiers={[listRowBackground('clear')]}>
+          <VStack spacing={10} modifiers={[frame({ maxWidth: Infinity }), padding({ top: 32, bottom: 8 })]}>
+            <Image systemName="hanger" size={40} color="white"
+              modifiers={[frame({ width: 76, height: 76 }), background(C.blue, shapes.roundedRectangle({ cornerRadius: 18, roundedCornerStyle: 'continuous' }))]} />
+            <Text modifiers={[font({ textStyle: 'largeTitle', weight: 'heavy' }), kerning(3)]}>DRIPPED</Text>
+            <Text modifiers={[f('subheadline'), secondary, multilineTextAlignment('center')]}>Your wardrobe, styled for every event.</Text>
+          </VStack>
+        </Section>
 
-        <Group style={{ marginTop: 40 }}>
-          <View style={[s.row, { height: 50 }]}>
-            <Txt style={{ width: 84 }}>Email</Txt>
-            <TextInput style={field} value={email} onChangeText={setEmail} placeholder="name@smu.edu.sg" placeholderTextColor={C.tertiary}
-              keyboardType="email-address" textContentType="username" autoCapitalize="none" autoComplete="email" returnKeyType="next" />
-          </View>
-          <View style={[s.row, { height: 50 }]}>
-            <Txt style={{ width: 84 }}>Password</Txt>
-            <TextInput style={field} value={password} onChangeText={setPassword} placeholder="Required" placeholderTextColor={C.tertiary}
-              secureTextEntry textContentType="password" returnKeyType="go" onSubmitEditing={() => email && password && logIn()} />
-          </View>
-        </Group>
-        <Pressable style={{ alignSelf: 'flex-end', marginVertical: 12 }} hitSlop={8}>
-          <Txt v="footnote" c={C.blue}>Forgot password?</Txt>
-        </Pressable>
+        <Section>
+          <HStack>
+            <Text modifiers={[frame({ width: 92, alignment: 'leading' })]}>Email</Text>
+            <TextField placeholder="name@smu.edu.sg" onTextChange={setEmail}
+              modifiers={[keyboardType('email-address'), textContentType('username'), textInputAutocapitalization('never'), autocorrectionDisabled(), submitLabel('next')]} />
+          </HStack>
+          <HStack>
+            <Text modifiers={[frame({ width: 92, alignment: 'leading' })]}>Password</Text>
+            <SecureField placeholder="Required" onTextChange={setPassword}
+              modifiers={[textContentType('password'), submitLabel('go'), onSubmit(() => ready && logIn())]} />
+          </HStack>
+        </Section>
 
-        <Button title={busy ? 'Logging in…' : 'Log in'} loading={busy} disabled={!email || !password} onPress={logIn} />
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 16 }}>
-          <View style={{ flex: 1, height: 0.5, backgroundColor: C.separator }} />
-          <Txt v="footnote" c={C.secondary}>or</Txt>
-          <View style={{ flex: 1, height: 0.5, backgroundColor: C.separator }} />
-        </View>
-        {/* ponytail: stand-in for ASAuthorizationAppleIDButton; add expo-apple-authentication for real Sign in with Apple. */}
-        <Pressable onPress={logIn} style={({ pressed }) => [s.btn, { backgroundColor: '#000', opacity: pressed ? 0.7 : 1 }]}>
-          <Icon name="apple.logo" color="#fff" size={18} />
-          <Txt v="headline" c="#fff">Continue with Apple</Txt>
-        </Pressable>
-
-        <View style={{ flex: 1 }} />
-        <Txt v="footnote" c={C.secondary} style={{ textAlign: 'center', marginBottom: 12 }}>
-          New to DRIPPED? <Txt v="footnote" c={C.blue}>Create an account</Txt>
-        </Txt>
-      </ScrollView>
-    </SafeAreaView>
+        <Actions>
+          <CTA label={busy ? 'Logging in…' : 'Log in'} disabled={!ready} onPress={logIn} />
+          {/* ponytail: stand-in for ASAuthorizationAppleIDButton; add expo-apple-authentication for real Sign in with Apple. */}
+          <Button onPress={logIn} modifiers={[buttonStyle('borderedProminent'), controlSize('large'), buttonBorderShape('capsule'), tint('black')]}>
+            <HStack spacing={6} modifiers={[frame({ maxWidth: Infinity })]}>
+              <Image systemName="apple.logo" color="white" />
+              <Text modifiers={[f('body', 'semibold'), foregroundStyle('white')]}>Continue with Apple</Text>
+            </HStack>
+          </Button>
+          <Button label="Forgot password?" onPress={() => {}} modifiers={[f('footnote')]} />
+          <HStack spacing={4} modifiers={[padding({ top: 24 })]}>
+            <Text modifiers={[f('footnote'), secondary]}>New to DRIPPED?</Text>
+            <Button label="Create an account" onPress={() => {}} modifiers={[f('footnote', 'semibold')]} />
+          </HStack>
+        </Actions>
+      </Form>
+    </Screen>
   );
 }

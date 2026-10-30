@@ -1,11 +1,12 @@
+import { Form, HStack, Image, ProgressView, Section, Text, VStack } from '@expo/ui/swift-ui';
+import { foregroundStyle, frame } from '@expo/ui/swift-ui/modifiers';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { DECK, avatarFor } from '@/data';
 import { isReady, useApp } from '@/store';
 import { C } from '@/theme';
-import { Button, Caption, Card, Figure, GarmentThumb, Group, Icon, Row, Txt, s } from '@/ui';
+import { Actions, CTA, Figure, RN, Row, Screen, f, sub } from '@/ui';
 
 // Closest piece you own, for pieces you don't own or can't wear. ponytail: fixed table for Caleb's scenario; real matching needs colour/kind scoring.
 const SWAP: Record<string, string> = { 'white-shirt': 'light-blue-shirt', 'dark-derbies': 'brown-boots' };
@@ -26,44 +27,49 @@ export default function Recreate() {
 
   if (loading) {
     return (
-      <View style={[s.screen, { alignItems: 'center', justifyContent: 'center', gap: 10 }]}>
+      <Screen>
         <Stack.Screen options={{ title: 'Recreate', headerLargeTitleEnabled: false }} />
-        <ActivityIndicator size="large" color={C.blue} />
-        <Txt v="headline">Matching your wardrobe…</Txt>
-        <Txt v="footnote" c={C.secondary}>Looking for the closest pieces you own</Txt>
-      </View>
+        <VStack spacing={10}>
+          <ProgressView />
+          <Text modifiers={[f('headline')]}>Matching your wardrobe…</Text>
+          <Text modifiers={sub}>Looking for the closest pieces you own</Text>
+        </VStack>
+      </Screen>
     );
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.pad}>
+    <Screen>
       <Stack.Screen options={{ title: 'Your version', headerLargeTitleEnabled: false }} />
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {[['Inspiration', look.avatar], ['Your version', yours]].map(([label, src]) => (
-          <Card key={label as string} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-            <Txt v="caption" c={label === 'Your version' ? C.blue : C.secondary}>{(label as string).toUpperCase()}</Txt>
-            <Figure src={src as number | string} height={210} />
-          </Card>
-        ))}
-      </View>
-      <Caption>How we matched it</Caption>
-      <Group>
-        {look.pieces.map((p, i) => {
-          const swapped = mine[i] !== p;
-          return (
-            <Row key={p} title={item(mine[i]).name} left={<GarmentThumb id={mine[i]} />}
-              subtitle={!swapped ? 'Same as the inspiration'
-                : owns(p) ? `Your ${item(p).name.toLowerCase()} is ${item(p).issue?.toLowerCase() ?? 'not ready'}, so we used this`
-                : `You don’t own ${item(p).name.toLowerCase()}, so we picked the closest you own`}
-              right={<Icon name={swapped ? 'arrow.triangle.swap' : 'checkmark.circle.fill'} color={swapped ? C.warn : C.ok} />} />
-          );
-        })}
-      </Group>
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-        <Button title="Try in Preview" kind="gray" style={{ flex: 1 }} onPress={() => { setPreview(mine); router.navigate('/preview'); }} />
-        <Button title="Save to an event" icon="calendar" style={{ flex: 1 }}
-          onPress={() => router.push({ pathname: '/save-look', params: { pieces: mine.join(','), name: `${look.name} (your version)`, date: upNext.date } })} />
-      </View>
-    </ScrollView>
+      <Form>
+        <Section>
+          <HStack spacing={10}>
+            {([['Inspiration', look.avatar], ['Your version', yours]] as const).map(([label, src]) => (
+              <VStack key={label} spacing={6} modifiers={[frame({ maxWidth: Infinity })]}>
+                <Text modifiers={[f('caption', 'semibold'), foregroundStyle(label === 'Your version' ? C.blue : C.secondary)]}>{label.toUpperCase()}</Text>
+                <RN><Figure src={src} height={210} /></RN>
+              </VStack>
+            ))}
+          </HStack>
+        </Section>
+        <Section title="How we matched it">
+          {look.pieces.map((p, i) => {
+            const swapped = mine[i] !== p;
+            return (
+              <Row key={p} title={item(mine[i]).name} thumb={mine[i]}
+                subtitle={!swapped ? 'Exact match from your wardrobe'
+                  : owns(p) ? `Instead of your ${item(p).name.toLowerCase()} (${item(p).issue?.toLowerCase() ?? 'not ready'})`
+                  : `Closest match to the ${item(p).name.toLowerCase()}`}
+                right={<Image systemName={swapped ? 'arrow.triangle.swap' : 'checkmark.circle.fill'} color={swapped ? C.warn : C.ok} />} />
+            );
+          })}
+        </Section>
+        <Actions>
+          <CTA label="Save to an event" icon="calendar"
+            onPress={() => router.push({ pathname: '/save-look', params: { pieces: mine.join(','), name: `${look.name} (your version)`, date: upNext.date } })} />
+          <CTA label="Try in Preview" kind="gray" onPress={() => { setPreview(mine); router.navigate('/preview'); }} />
+        </Actions>
+      </Form>
+    </Screen>
   );
 }

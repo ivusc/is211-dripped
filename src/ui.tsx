@@ -1,32 +1,210 @@
+import {
+  Button,
+  HStack,
+  Host,
+  Image as SFImage,
+  NavigationStack,
+  RNHostView,
+  Section,
+  Spacer,
+  Text,
+  Toolbar,
+  ToolbarItem,
+  VStack,
+  type HostProps,
+  type useNativeState,
+} from '@expo/ui/swift-ui';
+import {
+  accessibilityLabel,
+  background,
+  buttonBorderShape,
+  buttonStyle,
+  controlSize,
+  disabled,
+  font,
+  foregroundStyle,
+  frame,
+  glassEffect,
+  labelStyle,
+  lineLimit,
+  listRowBackground,
+  listRowInsets,
+  minimumScaleFactor,
+  navigationBarTitleDisplayMode,
+  navigationTitle,
+  onTapGesture,
+  padding,
+  shapes,
+  tint,
+  type ModifierConfig,
+} from '@expo/ui/swift-ui/modifiers';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type TextProps,
-  type ViewStyle,
-} from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Animated, PlatformColor, Text as RNText, View, type ColorValue, type TextProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SvgXml } from 'react-native-svg';
+import type { SFSymbol } from 'sf-symbols-typescript';
 
 import { ART, type Item } from './data';
 import { fmt, isReady, useApp } from './store';
 import { C, T } from './theme';
 
-export function Txt({ v = 'body', c = C.label, style, ...p }: TextProps & { v?: keyof typeof T; c?: string }) {
-  return <Text {...p} style={[T[v] as object, { color: c }, style]} />;
+// ---------- SwiftUI building blocks ----------
+
+type TextStyle = NonNullable<Parameters<typeof font>[0]['textStyle']>;
+type Weight = Parameters<typeof font>[0]['weight'];
+export const f = (textStyle: TextStyle, weight?: Weight) => font({ textStyle, weight });
+export const secondary = foregroundStyle({ type: 'hierarchical', style: 'secondary' });
+export const tertiary = foregroundStyle({ type: 'hierarchical', style: 'tertiary' });
+export const primary = foregroundStyle({ type: 'hierarchical', style: 'primary' });
+export const sub: ModifierConfig[] = [f('footnote'), secondary];
+
+// Writes a native text state (TextField/searchable) from JS. Kept outside components: the React Compiler
+// treats hook results as immutable, but a native state is meant to be set like this.
+export const setNative = (state: ReturnType<typeof useNativeState<string>>, value: string) => { state.value = value; };
+
+// Full-screen SwiftUI host. The app tint flows to every control inside.
+export function Screen({ children, ...p }: Omit<HostProps, 'style'>) {
+  return <Host style={{ flex: 1 }} seedColor={C.blue} {...p}>{children}</Host>;
 }
 
-export function Icon({ name, size = 17, color = C.label, ...p }: Omit<SymbolViewProps, 'name'> & { name: SymbolViewProps['name']; size?: number; color?: string }) {
-  return <SymbolView name={name} size={size} tintColor={color} {...p} />;
+// Content-sized SwiftUI host, for SwiftUI controls inside an RN layout. `fill` takes the width from RN.
+export function Inline({ children, fill, ...p }: Omit<HostProps, 'matchContents'> & { fill?: boolean }) {
+  return <Host matchContents={fill ? { vertical: true } : true} seedColor={C.blue} {...p}>{children}</Host>;
+}
+
+// RN view (garment art, figures, month grid) embedded in a SwiftUI tree. `fill` takes the width from
+// SwiftUI and the height from the RN content, for views laid out with flex.
+export function RN({ children, fill }: { children: React.ReactElement; fill?: boolean }) {
+  return <RNHostView matchContents={fill ? { vertical: true } : true}>{children}</RNHostView>;
+}
+
+type BarButton = { label: string; onPress: () => void; disabled?: boolean };
+
+// Sheet with its own inline navigation bar: Cancel/close on the leading edge, the confirm action trailing.
+export function Sheet({ title, cancel, confirm, close, modifiers = [], children }: {
+  title: string; cancel?: BarButton; confirm?: BarButton; close?: boolean; modifiers?: ModifierConfig[]; children: ReactNode;
+}) {
+  return (
+    <Screen>
+      <NavigationStack>
+        <Toolbar modifiers={[navigationTitle(title), navigationBarTitleDisplayMode('inline'), ...modifiers]}>
+          {children}
+          <Toolbar.Content>
+            {close && <ToolbarItem placement="cancellationAction"><Button role="close" onPress={() => router.back()} /></ToolbarItem>}
+            {cancel && <ToolbarItem placement="cancellationAction"><Button label={cancel.label} onPress={cancel.onPress} /></ToolbarItem>}
+            {confirm && (
+              <ToolbarItem placement="confirmationAction">
+                <Button label={confirm.label} onPress={confirm.onPress} modifiers={[disabled(!!confirm.disabled)]} />
+              </ToolbarItem>
+            )}
+          </Toolbar.Content>
+        </Toolbar>
+      </NavigationStack>
+    </Screen>
+  );
+}
+
+const TONES = {
+  blue: [C.blueSoft, C.blue],
+  warn: [C.warnSoft, C.warn],
+  ok: [C.okSoft, C.ok],
+  grey: [C.fill, C.label],
+} as const;
+
+export function Pill({ label, tone = 'grey', icon }: { label: string; tone?: keyof typeof TONES; icon?: SFSymbol }) {
+  const [bg, fg] = TONES[tone];
+  return (
+    <HStack spacing={3} modifiers={[padding({ horizontal: 8, vertical: 3 }), background(bg, shapes.capsule())]}>
+      {icon && <SFImage systemName={icon} size={10} color={fg} />}
+      <Text modifiers={[f('caption', 'semibold'), foregroundStyle(fg), lineLimit(1)]}>{label}</Text>
+    </HStack>
+  );
+}
+
+// A list row. Tappable rows are plain buttons so the title keeps the label colour; navigation rows get a chevron.
+export function Row({ title, subtitle, value, icon, thumb, right, onPress, chevron, check, tint }: {
+  title: string; subtitle?: string; value?: string; icon?: SFSymbol; thumb?: string; right?: ReactNode;
+  onPress?: () => void; chevron?: boolean; check?: boolean; tint?: string;
+}) {
+  const body = (
+    <HStack spacing={12}>
+      {icon && <SFImage systemName={icon} color={C.blue} modifiers={[f('body'), frame({ width: 26 })]} />}
+      {thumb && <RN><GarmentThumb id={thumb} /></RN>}
+      <VStack alignment="leading" spacing={2}>
+        <Text modifiers={[foregroundStyle(tint ?? C.label)]}>{title}</Text>
+        {subtitle && <Text modifiers={sub}>{subtitle}</Text>}
+      </VStack>
+      <Spacer />
+      {value && <Text modifiers={[secondary]}>{value}</Text>}
+      {right}
+      {check && <SFImage systemName="checkmark" color={C.blue} modifiers={[f('body', 'semibold')]} />}
+      {chevron && <SFImage systemName="chevron.right" modifiers={[f('footnote', 'semibold'), tertiary]} />}
+    </HStack>
+  );
+  if (!onPress) return body;
+  return <Button onPress={onPress} modifiers={[buttonStyle('plain')]}>{body}</Button>;
+}
+
+type CTAKind = 'filled' | 'gray' | 'plain' | 'destructive';
+const CTA_STYLE = { filled: 'borderedProminent', gray: 'glass', plain: 'borderless', destructive: 'bordered' } as const;
+// Secondary buttons are Liquid Glass tinted with the system label colour, so they read in light and dark screens.
+// PlatformColor, not a hierarchical style: a hierarchical tint recurses inside the glass material and crashes SwiftUI.
+const TINT: Partial<Record<CTAKind, ColorValue>> = { gray: PlatformColor('label'), destructive: C.red };
+
+// Full-width action button: filled for the one primary action, gray for secondary ones, red for destructive ones
+// (role alone doesn't colour a bordered button inside a Form row, so TINT does).
+export function CTA({ label, icon, onPress, kind = 'filled', disabled: off, small, wide = true }: {
+  label: string; icon?: SFSymbol; onPress: () => void; kind?: CTAKind; disabled?: boolean; small?: boolean; wide?: boolean;
+}) {
+  // The frame goes on the label: SwiftUI sizes a bordered button's background to its label.
+  // Labels stay on one line and shrink a little when two buttons share a row.
+  return (
+    <Button onPress={onPress} role={kind === 'destructive' ? 'destructive' : undefined}
+      modifiers={[buttonStyle(CTA_STYLE[kind]), controlSize(small ? 'small' : 'large'), buttonBorderShape('capsule'), disabled(!!off), accessibilityLabel(label), ...(TINT[kind] ? [tint(TINT[kind])] : [])]}>
+      <HStack spacing={6} modifiers={wide ? [frame({ maxWidth: Infinity })] : []}>
+        {/* Icon pinned to the text's line height, so buttons with different symbols in one row match. */}
+        {icon && <SFImage systemName={icon} modifiers={[frame({ height: small ? 20 : 22 })]} />}
+        <Text modifiers={[f(small ? 'subheadline' : 'body', 'semibold'), lineLimit(1), minimumScaleFactor(0.8)]}>{label}</Text>
+      </HStack>
+    </Button>
+  );
+}
+
+// Circular icon-only button (glass on iOS 26), for toolbars floating over content.
+export function IconCTA({ label, icon, onPress, kind = 'gray', disabled: off, size = 'regular' }: {
+  label: string; icon: SFSymbol; onPress: () => void; kind?: CTAKind; disabled?: boolean; size?: 'small' | 'regular' | 'large' | 'extraLarge';
+}) {
+  return (
+    <Button label={label} systemImage={icon} onPress={onPress} role={kind === 'destructive' ? 'destructive' : undefined}
+      modifiers={[labelStyle('iconOnly'), buttonStyle(kind === 'filled' ? 'glassProminent' : 'glass'), buttonBorderShape('circle'), controlSize(size), disabled(!!off)]} />
+  );
+}
+
+// Actions under a form sit on the grouped background, not inside a row.
+export function Actions({ children }: { children: ReactNode }) {
+  return (
+    <Section modifiers={[listRowBackground('clear'), listRowInsets({ top: 0, leading: 0, bottom: 0, trailing: 0 })]}>
+      <VStack spacing={10}>{children}</VStack>
+    </Section>
+  );
+}
+
+// Footnote with a leading symbol, for section footers.
+export function Note({ icon, children }: { icon?: SFSymbol; children: string }) {
+  return (
+    <HStack spacing={6} alignment="firstTextBaseline">
+      {icon && <SFImage systemName={icon} modifiers={sub} />}
+      <Text modifiers={sub}>{children}</Text>
+    </HStack>
+  );
+}
+
+// ---------- React Native art (rendered via RNHostView inside SwiftUI) ----------
+
+export function Txt({ v = 'body', c = C.label, style, ...p }: TextProps & { v?: keyof typeof T; c?: string }) {
+  return <RNText {...p} style={[T[v] as object, { color: c }, style]} />;
 }
 
 export function Garment({ id, size = 58 }: { id: string; size?: number }) {
@@ -41,159 +219,28 @@ export function Figure({ src, height = 270 }: { src: number | string; height?: n
   return <Image source={src} style={{ width, height }} contentFit="contain" transition={200} />;
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[s.card, style]}>{children}</View>;
-}
-
-const TONES = {
-  blue: [C.blueSoft, C.blue],
-  warn: [C.warnSoft, C.warn],
-  ok: [C.okSoft, C.ok],
-  grey: [C.fill, C.label],
-  solid: [C.blue, '#fff'],
-} as const;
-
-export function Pill({ label, tone = 'grey', icon }: { label: string; tone?: keyof typeof TONES; icon?: SymbolViewProps['name'] }) {
-  const [bg, fg] = TONES[tone];
-  return (
-    <View style={[s.pill, { backgroundColor: bg }]}>
-      {icon && <Icon name={icon} size={11} color={fg} />}
-      <Txt v="caption" c={fg}>{label}</Txt>
-    </View>
-  );
-}
-
-type BtnKind = 'filled' | 'tinted' | 'gray' | 'plain' | 'destructive';
-export function Button({
-  title, onPress, kind = 'filled', icon, disabled, loading, style, small,
-}: {
-  title: string; onPress?: () => void; kind?: BtnKind; icon?: SymbolViewProps['name'];
-  disabled?: boolean; loading?: boolean; style?: StyleProp<ViewStyle>; small?: boolean;
-}) {
-  const bg = disabled ? C.fill : { filled: C.blue, tinted: C.blueSoft, gray: C.fill, plain: 'transparent', destructive: C.fill }[kind];
-  const fg = disabled ? C.tertiary : { filled: '#fff', tinted: C.blue, gray: C.label, plain: C.blue, destructive: C.red }[kind];
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled || loading}
-      onPress={onPress}
-      style={({ pressed }) => [s.btn, small && s.btnSmall, { backgroundColor: bg, opacity: pressed ? 0.6 : 1 }, style]}>
-      {loading ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} size={small ? 14 : 16} color={fg} weight="semibold" /> : null}
-      <Txt v={small ? 'subheadBold' : 'headline'} c={fg}>{title}</Txt>
-    </Pressable>
-  );
-}
-
-export function IconButton({ name, onPress, bg = C.fill, color = C.label, size = 36, label }: {
-  name: SymbolViewProps['name']; onPress?: () => void; bg?: string; color?: string; size?: number; label: string;
-}) {
-  return (
-    <Pressable
-      accessibilityLabel={label}
-      onPress={onPress}
-      hitSlop={6}
-      style={({ pressed }) => ({ width: size, height: size, borderRadius: size / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-      <Icon name={name} size={size * 0.45} color={color} weight="semibold" />
-    </Pressable>
-  );
-}
-
-export function Segmented<V extends string>({ options, value, onChange, labels }: {
-  options: readonly V[]; value: V; onChange: (v: V) => void; labels?: Partial<Record<V, string>>;
-}) {
-  return (
-    <View style={s.seg}>
-      {options.map((o) => (
-        <Pressable key={o} onPress={() => onChange(o)} style={[s.segItem, o === value && s.segOn]} accessibilityRole="tab" accessibilityState={{ selected: o === value }}>
-          <Txt v={o === value ? 'footnoteBold' : 'footnote'}>{labels?.[o] ?? o}</Txt>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress?: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[s.chip, on && { backgroundColor: C.label }]} accessibilityState={{ selected: on }}>
-      {on && <Icon name="checkmark" size={12} color="#fff" weight="bold" />}
-      <Txt v="subheadBold" c={on ? '#fff' : C.label}>{label}</Txt>
-    </Pressable>
-  );
-}
-
-export function Caption({ children }: { children: string }) {
-  return <Txt v="footnote" c={C.secondary} style={{ marginLeft: 16, marginTop: 8, marginBottom: 6 }}>{children.toUpperCase()}</Txt>;
-}
-
-// Inset grouped list (UITableView .insetGrouped).
-export function Group({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  const rows = (Array.isArray(children) ? children.flat() : [children]).filter(Boolean);
-  return (
-    <View style={[s.group, style]}>
-      {rows.map((r, i) => (
-        <Fragment key={i}>
-          {i > 0 && <View style={s.sep} />}
-          {r}
-        </Fragment>
-      ))}
-    </View>
-  );
-}
-
-export function Row({ title, subtitle, value, left, right, onPress, chevron, tint, check }: {
-  title: string; subtitle?: string; value?: string; left?: ReactNode; right?: ReactNode;
-  onPress?: () => void; chevron?: boolean; tint?: string; check?: boolean;
-}) {
-  return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => [s.row, pressed && { backgroundColor: C.fill }]}>
-      {left}
-      <View style={{ flex: 1 }}>
-        <Txt c={tint ?? C.label}>{title}</Txt>
-        {subtitle && <Txt v="footnote" c={C.secondary}>{subtitle}</Txt>}
-      </View>
-      {value && <Txt c={C.secondary}>{value}</Txt>}
-      {right}
-      {check && <Icon name="checkmark" color={C.blue} weight="semibold" />}
-      {chevron && <Icon name="chevron.right" size={13} color={C.tertiary} weight="semibold" />}
-    </Pressable>
-  );
-}
-
 export function GarmentThumb({ id, size = 44 }: { id: string; size?: number }) {
   return (
-    <View style={{ width: size, height: size, borderRadius: 10, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ width: size, height: size, borderRadius: 10, borderCurve: 'continuous', backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
       <Garment id={id} size={size * 0.7} />
     </View>
   );
 }
 
-// Bottom-anchored screen (full-screen modal or sheet): pads by the keyboard when it's up, else the
-// home indicator. KeyboardAvoidingView can't do this in a sheet: it measures relative to the sheet.
-export function KeyboardScreen({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  const insets = useSafeAreaInsets();
-  const [kb, setKb] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardWillShow', (e) => setKb(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardWillHide', () => setKb(0));
-    return () => { show.remove(); hide.remove(); };
-  }, []);
-  return <View style={[{ flex: 1 }, style, { paddingBottom: (kb || insets.bottom) + 8 }]}>{children}</View>;
-}
+// ---------- Overlays ----------
 
-// Snackbar with Undo, shown above the tab bar.
+// Liquid Glass snackbar with Undo, above the tab bar and the glass composers that sit on it.
 export function ToastHost() {
   const { toast } = useApp();
   if (!toast) return null;
   return (
-    <View pointerEvents="box-none" style={s.toastWrap}>
-      <View style={s.toast} accessibilityLiveRegion="polite">
-        <Txt v="subhead" c="#fff" style={{ flex: 1 }}>{toast.message}</Txt>
-        {toast.undo && (
-          <Pressable onPress={toast.undo} hitSlop={10}>
-            <Txt v="subheadBold" c="#fff">Undo</Txt>
-          </Pressable>
-        )}
-      </View>
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 16, right: 16, bottom: 156, alignItems: 'center' }} accessibilityLiveRegion="polite">
+      <Inline>
+        <HStack spacing={16} modifiers={[padding({ horizontal: 18, vertical: 12 }), glassEffect({ glass: { variant: 'regular' }, shape: 'capsule' })]}>
+          <Text modifiers={[f('subheadline')]}>{toast.message}</Text>
+          {toast.undo && <Button label="Undo" onPress={toast.undo} modifiers={[f('subheadline', 'semibold')]} />}
+        </HStack>
+      </Inline>
     </View>
   );
 }
@@ -207,8 +254,9 @@ export function ReminderHost() {
 
   useEffect(() => {
     if (!reminder) return;
-    Animated.spring(y, { toValue: 0, useNativeDriver: true }).start();
-    const t = setTimeout(() => Animated.timing(y, { toValue: -200, duration: 250, useNativeDriver: true }).start(() => setReminder(undefined)), 8000);
+    // Critically damped: the banner arrives without bouncing, and leaves the way it came.
+    Animated.spring(y, { toValue: 0, damping: 30, stiffness: 260, useNativeDriver: true }).start();
+    const t = setTimeout(() => Animated.spring(y, { toValue: -200, damping: 30, stiffness: 260, useNativeDriver: true }).start(() => setReminder(undefined)), 8000);
     return () => clearTimeout(t);
   }, [reminder]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -234,40 +282,23 @@ export function ReminderHost() {
     router.navigate(`/calendar/day/${e.date}`);
   };
   return (
-    <Animated.View style={[s.reminderWrap, { top: insets.top + 4, transform: [{ translateY: y }] }]}>
-      <Pressable onPress={open} accessibilityRole="button" accessibilityLabel="DRIPPED notification" style={s.reminder}>
-        <View style={{ width: 38, height: 38, borderRadius: 9, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center', borderCurve: 'continuous' }}>
-          <Icon name="hanger" size={22} color="#fff" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <View style={s.rowBetween}>
-            <Txt v="subheadBold">{title}</Txt>
-            <Txt v="footnote" c={C.secondary}>now</Txt>
-          </View>
-          <Txt v="subhead">{body}</Txt>
-        </View>
-      </Pressable>
+    <Animated.View style={{ position: 'absolute', left: 8, right: 8, top: insets.top + 4, transform: [{ translateY: y }] }}
+      accessibilityRole="button" accessibilityLabel="DRIPPED notification">
+      <Host matchContents={{ vertical: true }} seedColor={C.blue}>
+        <HStack spacing={10} alignment="top"
+          modifiers={[padding({ all: 14 }), glassEffect({ glass: { variant: 'regular', interactive: true }, shape: 'roundedRectangle', cornerRadius: 24 }), onTapGesture(open)]}>
+          <SFImage systemName="hanger" size={20} color="white"
+            modifiers={[padding({ all: 9 }), background(C.blue, shapes.roundedRectangle({ cornerRadius: 9, roundedCornerStyle: 'continuous' }))]} />
+          <VStack alignment="leading" spacing={2}>
+            <HStack>
+              <Text modifiers={[f('subheadline', 'semibold')]}>{title}</Text>
+              <Spacer />
+              <Text modifiers={sub}>now</Text>
+            </HStack>
+            <Text modifiers={[f('subheadline')]}>{body}</Text>
+          </VStack>
+        </HStack>
+      </Host>
     </Animated.View>
   );
 }
-
-export const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
-  pad: { padding: 16, gap: 12, paddingBottom: 120 },
-  card: { backgroundColor: C.card, borderRadius: 16, padding: 14, borderCurve: 'continuous' },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999, alignSelf: 'flex-start' },
-  btn: { height: 50, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 16, borderCurve: 'continuous' },
-  btnSmall: { height: 36, borderRadius: 18, paddingHorizontal: 14 },
-  seg: { flexDirection: 'row', backgroundColor: C.fill, borderRadius: 9, padding: 2 },
-  segItem: { flex: 1, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
-  segOn: { backgroundColor: C.card, boxShadow: '0 3px 8px rgba(0,0,0,0.12)' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 17, backgroundColor: C.card },
-  group: { backgroundColor: C.card, borderRadius: 12, overflow: 'hidden', borderCurve: 'continuous' },
-  sep: { height: StyleSheet.hairlineWidth, backgroundColor: C.separator, marginLeft: 16 },
-  row: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toastWrap: { position: 'absolute', left: 16, right: 16, bottom: 104 },
-  reminderWrap: { position: 'absolute', left: 8, right: 8 },
-  reminder: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: 24, backgroundColor: '#F5F5F7', boxShadow: '0 8px 24px rgba(0,0,0,0.18)', borderCurve: 'continuous' },
-  toast: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1C1C1E', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 },
-});

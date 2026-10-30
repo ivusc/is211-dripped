@@ -1,10 +1,12 @@
+import { Button, ContentUnavailableView, Form, HStack, Image, Picker, Section, Spacer, Text, VStack } from '@expo/ui/swift-ui';
+import { buttonStyle, controlSize, disabled, foregroundStyle, padding, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert } from 'react-native';
 
 import { shortDay, useApp } from '@/store';
 import { C } from '@/theme';
-import { Button, GarmentThumb, Group, Icon, Row, Segmented, Txt, s } from '@/ui';
+import { CTA, GarmentThumb, RN, Screen, sub } from '@/ui';
 
 export default function Laundry() {
   const { items, updateItem, setItems, withUndo, plannedFor } = useApp();
@@ -36,50 +38,59 @@ export default function Laundry() {
   const toggle = (id: string) => setPicked(picked.includes(id) ? picked.filter((p) => p !== id) : [...picked, id]);
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.pad}>
-        <Stack.Screen
-          options={{
-            title: 'Laundry',
-            unstable_headerRightItems: () => list.length ? [
-              { type: 'button', label: selecting ? 'Cancel' : 'Select', onPress: () => { setSelecting(!selecting); setPicked([]); } },
-            ] : [],
-          }}
-        />
-        <Segmented options={['wash', 'iron'] as const} value={tab} onChange={(t) => { setTab(t); setPicked([]); }}
-          labels={{ wash: `To wash · ${items.filter((i) => i.wash).length}`, iron: `To iron · ${items.filter((i) => i.iron).length}` }} />
-        {!list.length ? (
-          <View style={{ alignItems: 'center', gap: 8, marginTop: 60 }}>
-            <Icon name="checkmark.seal.fill" size={44} color={C.ok} />
-            <Txt v="headline">All caught up</Txt>
-            <Txt c={C.secondary}>Nothing left to {tab}.</Txt>
-          </View>
-        ) : (
-          <Group>
-            {list.map((i) => {
-              const plan = plannedFor(i.id);
-              const blocked = tab === 'iron' && i.wash;
-              return (
-                <Row key={i.id} title={i.name}
-                  subtitle={blocked ? 'Needs washing first' : plan ? `Needed for ${plan.title} · ${shortDay(plan.date)}` : `Last worn ${i.lastWorn}`}
-                  left={
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      {selecting && <Icon name={picked.includes(i.id) ? 'checkmark.circle.fill' : 'circle'} color={picked.includes(i.id) ? C.blue : C.separator} size={22} />}
-                      <GarmentThumb id={i.id} />
-                    </View>
-                  }
-                  right={selecting ? undefined : <Button title={tab === 'wash' ? 'Washed' : 'Ironed'} kind="tinted" small disabled={blocked} onPress={() => markOne(i.id, i.name)} />}
-                  onPress={selecting && !blocked ? () => toggle(i.id) : undefined} />
-              );
-            })}
-          </Group>
+    <Screen>
+      <Stack.Screen
+        options={{
+          title: 'Laundry',
+          unstable_headerRightItems: () => list.length ? [
+            { type: 'button', label: selecting ? 'Done' : 'Select', variant: selecting ? 'done' : 'plain', onPress: () => { setSelecting(!selecting); setPicked([]); } },
+          ] : [],
+        }}
+      />
+      <VStack spacing={0}>
+        <Form>
+          <Section>
+            <Picker selection={tab} onSelectionChange={(t) => { setTab(t); setPicked([]); }} modifiers={[pickerStyle('segmented')]}>
+              <Text modifiers={[tag('wash')]}>{`To wash · ${items.filter((i) => i.wash).length}`}</Text>
+              <Text modifiers={[tag('iron')]}>{`To iron · ${items.filter((i) => i.iron).length}`}</Text>
+            </Picker>
+          </Section>
+          {!list.length ? (
+            <ContentUnavailableView title="All caught up" systemImage="checkmark.seal.fill" description={`Nothing left to ${tab}.`} />
+          ) : (
+            <Section>
+              {list.map((i) => {
+                const plan = plannedFor(i.id);
+                const blocked = tab === 'iron' && i.wash;
+                const on = picked.includes(i.id);
+                const row = (
+                  <HStack spacing={12}>
+                    {selecting && <Image systemName={on ? 'checkmark.circle.fill' : 'circle'} size={22} color={on ? C.blue : C.separator} />}
+                    <RN><GarmentThumb id={i.id} /></RN>
+                    <VStack alignment="leading" spacing={2}>
+                      <Text modifiers={[foregroundStyle(C.label)]}>{i.name}</Text>
+                      <Text modifiers={sub}>{blocked ? 'Needs washing first' : plan ? `Needed for ${plan.title} · ${shortDay(plan.date)}` : `Last worn ${i.lastWorn}`}</Text>
+                    </VStack>
+                    <Spacer />
+                    {!selecting && (
+                      <Button label={tab === 'wash' ? 'Washed' : 'Ironed'} onPress={() => markOne(i.id, i.name)}
+                        modifiers={[buttonStyle('bordered'), controlSize('small'), disabled(blocked)]} />
+                    )}
+                  </HStack>
+                );
+                return selecting
+                  ? <Button key={i.id} onPress={() => toggle(i.id)} modifiers={[buttonStyle('plain'), disabled(blocked)]}>{row}</Button>
+                  : <HStack key={i.id}>{row}</HStack>;
+              })}
+            </Section>
+          )}
+        </Form>
+        {selecting && (
+          <VStack modifiers={[padding({ horizontal: 16, bottom: 8 })]}>
+            <CTA label={picked.length ? `Mark ${picked.length} as ${verb}` : 'Select items'} disabled={!picked.length} onPress={markPicked} />
+          </VStack>
         )}
-      </ScrollView>
-      {selecting && (
-        <View style={{ position: 'absolute', left: 16, right: 16, bottom: 100 }}>
-          <Button title={picked.length ? `Mark ${picked.length} as ${verb}` : 'Select items'} disabled={!picked.length} onPress={markPicked} />
-        </View>
-      )}
-    </View>
+      </VStack>
+    </Screen>
   );
 }
