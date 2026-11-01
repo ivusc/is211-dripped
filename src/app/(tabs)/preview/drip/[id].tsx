@@ -1,9 +1,10 @@
+import { Form, HStack, Section, Spacer } from '@expo/ui/swift-ui';
+import { frame } from '@expo/ui/swift-ui/modifiers';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, View } from 'react-native';
 
 import { DRIPS } from '@/data';
 import { useApp } from '@/store';
-import { Button, Caption, Card, Figure, GarmentThumb, Group, Row, s } from '@/ui';
+import { Actions, CTA, Figure, RN, Row, Screen } from '@/ui';
 
 export default function DripDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -12,7 +13,7 @@ export default function DripDetail() {
   const on = !!liked[d.id];
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={s.pad}>
+    <Screen>
       <Stack.Screen
         options={{
           title: d.name,
@@ -22,26 +23,25 @@ export default function DripDetail() {
           ],
         }}
       />
-      <Card style={{ alignItems: 'center', paddingVertical: 20 }}>
-        <Figure src={d.avatar} height={280} />
-      </Card>
-      <Caption>Pieces</Caption>
-      <Group>
-        {d.pieces.map((p) => (
-          <Row key={p} title={item(p).name} subtitle={item(p).category.slice(0, -1)} left={<GarmentThumb id={p} />} chevron onPress={() => router.push(`/item/${p}`)} />
-        ))}
-      </Group>
-      <Caption>Details</Caption>
-      <Group>
-        <Row title="Last worn" value={d.date} />
-        <Row title="Event" value={d.event} />
-        <Row title="Dress code" value={d.tag} />
-      </Group>
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-        <Button title="Open in Preview" kind="gray" style={{ flex: 1 }} onPress={() => { setPreview(d.pieces); router.navigate('/preview'); }} />
-        <Button title="Wear again" icon="calendar" style={{ flex: 1 }}
-          onPress={() => router.push({ pathname: '/save-look', params: { pieces: d.pieces.join(','), name: d.name } })} />
-      </View>
-    </ScrollView>
+      <Form>
+        <Section>
+          <HStack modifiers={[frame({ height: 310 })]}><Spacer /><RN><Figure src={d.avatar} height={280} /></RN><Spacer /></HStack>
+        </Section>
+        <Section title="Pieces">
+          {d.pieces.map((p) => (
+            <Row key={p} title={item(p).name} subtitle={item(p).category.slice(0, -1)} thumb={p} chevron onPress={() => router.push(`/item/${p}`)} />
+          ))}
+        </Section>
+        <Section title="Details">
+          <Row title="Last worn" value={d.date} />
+          <Row title="Event" value={d.event} />
+          <Row title="Dress code" value={d.tag} />
+        </Section>
+        <Actions>
+          <CTA label="Wear again" icon="calendar" onPress={() => router.push({ pathname: '/save-look', params: { pieces: d.pieces.join(','), name: d.name } })} />
+          <CTA label="Open in Preview" kind="gray" onPress={() => { setPreview(d.pieces); router.navigate('/preview'); }} />
+        </Actions>
+      </Form>
+    </Screen>
   );
 }

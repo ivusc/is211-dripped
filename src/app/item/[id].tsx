@@ -1,13 +1,17 @@
+import { Button, ConfirmationDialog, Form, HStack, Label, Section, Spacer, Text, ZStack } from '@expo/ui/swift-ui';
+import { buttonStyle, controlSize, foregroundStyle, frame } from '@expo/ui/swift-ui/modifiers';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActionSheetIOS, Alert, ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { Alert } from 'react-native';
 
 import { isReady, shortDay, statusLabel, useApp } from '@/store';
 import { C } from '@/theme';
-import { Button, Caption, Card, Garment, Group, Icon, IconButton, Pill, Row, Txt, s } from '@/ui';
+import { Actions, CTA, Garment, Pill, RN, Row, Sheet, sub } from '@/ui';
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { items, updateItem, setItems, withUndo, plannedFor } = useApp();
+  const [asking, setAsking] = useState(false);
   const i = items.find((x) => x.id === id);
   if (!i) return null; // removed while open
   const plan = plannedFor(i.id);
@@ -20,14 +24,7 @@ export default function ItemDetail() {
     ]);
   };
 
-  const notReady = () =>
-    ActionSheetIOS.showActionSheetWithOptions(
-      { title: 'What’s wrong with it?', options: ['Needs washing', 'Needs ironing', 'Has a hole', 'Cancel'], cancelButtonIndex: 3 },
-      (n) => {
-        const patch = [{ wash: true }, { iron: true }, { issue: 'Has a hole' }][n];
-        if (patch) withUndo(`${i.name} marked not ready`, () => updateItem(i.id, patch));
-      },
-    );
+  const notReady = (patch: Parameters<typeof updateItem>[1]) => withUndo(`${i.name} marked not ready`, () => updateItem(i.id, patch));
 
   const remove = () =>
     Alert.alert(`Remove ${i.name.toLowerCase()}?`, plan ? `It’s planned for ${plan.title}.` : 'You can undo this right after.', [
@@ -35,44 +32,57 @@ export default function ItemDetail() {
       { text: 'Remove', style: 'destructive', onPress: () => { router.back(); withUndo(`${i.name} removed`, () => setItems((xs) => xs.filter((x) => x.id !== i.id))); } },
     ]);
 
+  const small = (label: string, onPress: () => void) => (
+    <Button label={label} onPress={onPress} modifiers={[buttonStyle('bordered'), controlSize('small')]} />
+  );
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
-      <View style={s.rowBetween}>
-        <View style={{ flex: 1 }}>
-          <Txt v="title2">{i.name}</Txt>
-          <Txt v="subhead" c={C.secondary}>{i.kind} · {i.material} · {i.colour}</Txt>
-        </View>
-        <IconButton name="xmark" label="Close" size={30} onPress={() => router.back()} />
-      </View>
-      <Card style={{ alignItems: 'center', paddingVertical: 20 }}>
-        <Garment id={i.id} size={150} />
-        <View style={{ position: 'absolute', top: 12, left: 12 }}>
-          <Pill label={statusLabel(i)} tone={isReady(i) ? 'ok' : 'warn'} icon={isReady(i) ? 'checkmark' : 'exclamationmark.triangle.fill'} />
-        </View>
-      </Card>
-      {plan && (
-        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.blueSoft }}>
-          <Icon name="calendar" color={C.blue} />
-          <Txt v="subhead" c={C.blue} style={{ flex: 1 }}>Planned for {plan.title} · {shortDay(plan.date)}</Txt>
-        </Card>
-      )}
-      <Group>
-        <Row title="Clean" value={i.wash ? 'Needs washing' : 'Yes'} right={i.wash ? <Button title="Mark washed" kind="tinted" small onPress={() => mark('wash')} /> : undefined} />
-        <Row title="Ironed" value={i.iron ? 'Needs ironing' : 'Yes'} right={i.iron ? <Button title="Mark ironed" kind="tinted" small onPress={() => mark('iron')} /> : undefined} />
-        {i.issue ? <Row title="Issue" value={i.issue} subtitle={i.flaw} right={<Button title="Fixed" kind="tinted" small onPress={() => withUndo(`${i.name} marked as fixed`, () => updateItem(i.id, { issue: undefined }))} />} /> : null}
-        <Row title="Condition" value={i.condition} />
-        <Row title="Last worn" value={i.lastWorn} />
-      </Group>
-      <Caption>Style tags</Caption>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginHorizontal: 4 }}>
-        {i.tags.map((t) => <Pill key={t} label={t} />)}
-      </View>
-      <Button title="Style a look with this" icon="sparkles" style={{ marginTop: 8 }}
-        onPress={() => { router.back(); router.navigate({ pathname: '/stylist/looks', params: { prompt: `Style a look with my ${i.name.toLowerCase()}` } }); }} />
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {isReady(i) && <Button title="Mark not ready" kind="gray" style={{ flex: 1 }} onPress={notReady} />}
-        <Button title="Remove" kind="destructive" style={{ flex: 1 }} onPress={remove} />
-      </View>
-    </ScrollView>
+    <Sheet title={i.name} close>
+      <Form>
+        <Section footer={<Text modifiers={sub}>{`${i.kind} · ${i.material} · ${i.colour}`}</Text>}>
+          <ZStack alignment="topLeading">
+            <HStack modifiers={[frame({ height: 190 })]}><Spacer /><RN><Garment id={i.id} size={150} /></RN><Spacer /></HStack>
+            <Pill label={statusLabel(i)} tone={isReady(i) ? 'ok' : 'warn'} icon={isReady(i) ? 'checkmark' : 'exclamationmark.triangle.fill'} />
+          </ZStack>
+        </Section>
+
+        {plan && (
+          <Section>
+            <Label title={`Planned for ${plan.title} · ${shortDay(plan.date)}`} systemImage="calendar" modifiers={[foregroundStyle(C.blue)]} />
+          </Section>
+        )}
+
+        <Section>
+          <Row title="Clean" value={i.wash ? 'Needs washing' : 'Yes'} right={i.wash ? small('Mark washed', () => mark('wash')) : undefined} />
+          <Row title="Ironed" value={i.iron ? 'Needs ironing' : 'Yes'} right={i.iron ? small('Mark ironed', () => mark('iron')) : undefined} />
+          {i.issue ? <Row title="Issue" value={i.issue} subtitle={i.flaw} right={small('Fixed', () => withUndo(`${i.name} marked as fixed`, () => updateItem(i.id, { issue: undefined })))} /> : null}
+          <Row title="Condition" value={i.condition} />
+          <Row title="Last worn" value={i.lastWorn} />
+        </Section>
+
+        <Section title="Style tags">
+          <HStack spacing={6}>{i.tags.map((t) => <Pill key={t} label={t} />)}</HStack>
+        </Section>
+
+        <Actions>
+          <CTA label="Style a look with this" icon="sparkles"
+            onPress={() => { router.back(); router.navigate({ pathname: '/stylist/looks', params: { prompt: `Style a look with my ${i.name.toLowerCase()}` } }); }} />
+          <HStack spacing={10}>
+            {isReady(i) && (
+              <ConfirmationDialog title="What’s wrong with it?" titleVisibility="visible" isPresented={asking} onIsPresentedChange={setAsking}>
+                <ConfirmationDialog.Trigger><CTA label="Mark not ready" kind="gray" onPress={() => setAsking(true)} /></ConfirmationDialog.Trigger>
+                <ConfirmationDialog.Actions>
+                  <Button label="Needs washing" onPress={() => notReady({ wash: true })} />
+                  <Button label="Needs ironing" onPress={() => notReady({ iron: true })} />
+                  <Button label="Has a hole" onPress={() => notReady({ issue: 'Has a hole' })} />
+                  <Button label="Cancel" role="cancel" />
+                </ConfirmationDialog.Actions>
+              </ConfirmationDialog>
+            )}
+            <CTA label="Remove" kind="destructive" onPress={remove} />
+          </HStack>
+        </Actions>
+      </Form>
+    </Sheet>
   );
 }
