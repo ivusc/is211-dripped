@@ -40,11 +40,11 @@ export function MonthGrid({ month, selected, onSelect }: { month: Date; selected
             const isToday = key === TODAY;
             const color = dot(key);
             return (
-              <Pressable key={key} onPress={() => onSelect(key)} style={{ flex: 1, alignItems: 'center', height: 44 }}
+              <Pressable key={key} onPress={() => onSelect(key)} style={{ flex: 1, alignItems: 'center', height: 40 }}
                 accessibilityLabel={parse(key).toDateString()} accessibilityState={{ selected: isSel }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+                <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: isSel ? C.blue : isToday ? C.blueSoft : 'transparent' }}>
-                  <Txt v={isSel || isToday ? 'headline' : 'body'} c={isSel ? '#fff' : isToday ? C.blue : inMonth ? C.label : C.tertiary}>{d.getDate()}</Txt>
+                  <Txt v={isSel || isToday ? 'subheadBold' : 'subhead'} c={isSel ? '#fff' : isToday ? C.blue : inMonth ? C.label : C.tertiary}>{d.getDate()}</Txt>
                 </View>
                 <View style={{ width: 5, height: 5, borderRadius: 3, marginTop: 2, backgroundColor: color ?? 'transparent' }} />
               </Pressable>

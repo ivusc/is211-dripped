@@ -1,1 +1,5 @@
-export { TabStack as default } from '@/stack';
+import { TabStack } from '@/stack';
+
+export default function Layout() {
+  return <TabStack back="DTD" />;
+}

@@ -147,6 +147,7 @@ export const SEED_EVENTS: Event[] = [
   { id: 'pres', title: 'Group presentation', date: '2026-01-09', time: '3:00 – 4:00 PM', dressCode: 'Smart casual', outfit: ['navy-polo', 'black-pants', 'black-leather-shoes'], synced: true },
   { id: 'is211', title: 'IS211 consultation', date: '2026-01-15', time: '10:00 – 10:30 AM', dressCode: 'No dress code', optional: true, synced: true },
   { id: 'career', title: 'Career fair networking session', date: '2026-01-16', time: '3:00 PM', dressCode: 'Smart casual', synced: true },
+  { id: 'client', title: 'Client project meeting', date: '2026-01-21', time: '2:00 – 3:00 PM', dressCode: 'Smart casual', outfit: ['light-blue-shirt', 'beige-pants', 'brown-boots'], synced: true },
   { id: 'dinner', title: 'Dinner & dance', date: '2026-01-27', time: '7:00 – 10:00 PM', dressCode: 'Formal', synced: true },
 ];
 

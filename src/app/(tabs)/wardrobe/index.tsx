@@ -1,6 +1,6 @@
 import { Button, ContentUnavailableView, ContextMenu, Form, Grid, HStack, ScrollView, Section, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
 import {
-  accessibilityLabel, background, buttonBorderShape, buttonStyle, controlSize, frame, headerProminence, lineLimit,
+  accessibilityLabel, background, buttonBorderShape, buttonStyle, controlSize, frame, headerProminence,
   listRowBackground, listRowInsets, onTapGesture, padding, shapes,
 } from '@expo/ui/swift-ui/modifiers';
 import { Stack, router } from 'expo-router';
@@ -9,7 +9,7 @@ import { useState } from 'react';
 import type { Item } from '@/data';
 import { isReady, matches, shortDay, useApp } from '@/store';
 import { C } from '@/theme';
-import { Garment, Pill, RN, Screen, f, secondary } from '@/ui';
+import { Garment, Pill, RN, Screen, f } from '@/ui';
 
 const PREVIEW_COUNT = 6;
 const COLS = 3;
@@ -57,15 +57,11 @@ export default function Wardrobe() {
               <HStack modifiers={[frame({ maxWidth: Infinity }), frame({ height: 112 })]}><RN><Garment id={i.id} size={58} /></RN></HStack>
               {/* Padding goes inside the tile's frame so the badges sit 8pt in from its bottom-left corner. */}
               <VStack alignment="leading" modifiers={[padding({ all: 8 }), frame({ maxWidth: Infinity, alignment: 'leading' }), frame({ height: 112 })]}>
-                {plan && <Pill label={shortDay(plan.date).replace(/ \w+$/, '')} tone="blue" icon="calendar" />}
+                {plan && <Pill label={shortDay(plan.date).replace(/ \w+$/, '')} tone="blue" icon="calendar" small />}
                 <Spacer />
-                {badges.length > 0 && <HStack spacing={4}>{badges.map((b) => <Pill key={b} label={b} tone="warn" />)}</HStack>}
+                {badges.length > 0 && <HStack spacing={4}>{badges.map((b) => <Pill key={b} label={b} tone="warn" small />)}</HStack>}
               </VStack>
             </ZStack>
-            <VStack alignment="leading" spacing={0} modifiers={[padding({ horizontal: 4 })]}>
-              <Text modifiers={[f('footnote', 'semibold'), lineLimit(1)]}>{i.name}</Text>
-              <Text modifiers={[f('caption'), secondary, lineLimit(1)]}>{i.kind}</Text>
-            </VStack>
           </VStack>
         </ContextMenu.Trigger>
       </ContextMenu>
@@ -110,7 +106,7 @@ export default function Wardrobe() {
             <Section key={sec.title}
               modifiers={[headerProminence('increased'), listRowBackground('clear'), listRowInsets({ top: 0, leading: 0, bottom: 0, trailing: 0 })]}
               header={
-                <HStack>
+                <HStack modifiers={[padding({ bottom: 12 })]}>
                   <Text modifiers={[f('title3', 'bold')]}>{sec.title}</Text>
                   <Spacer />
                   {sec.data.length > PREVIEW_COUNT && (

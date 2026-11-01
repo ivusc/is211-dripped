@@ -30,7 +30,8 @@ export default function Pieces() {
               <Row key={id} title={i.name} thumb={id} chevron={!look}
                 subtitle={!look ? `${i.category.slice(0, -1)} · ${i.material}`
                   : !mine ? 'Not in your wardrobe'
-                  : status !== 'Ready' ? `Yours is ${status.toLowerCase()}` : `${i.category.slice(0, -1)} · ${i.colour}`}
+                  // "Yours is stained", but "Yours needs ironing".
+                  : status !== 'Ready' ? `Yours ${status.startsWith('Needs') ? '' : 'is '}${status.toLowerCase()}` : `${i.category.slice(0, -1)} · ${i.colour}`}
                 right={<Pill label={look && !mine ? 'Not owned' : look && status === 'Ready' ? 'You own' : status} tone={mine && status === 'Ready' ? 'ok' : 'warn'}
                   icon={look && mine && status === 'Ready' ? 'checkmark' : undefined} />}
                 onPress={look ? undefined : () => router.push(`/item/${id}`)} />

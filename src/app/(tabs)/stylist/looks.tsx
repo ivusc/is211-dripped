@@ -1,6 +1,6 @@
-import { Button, Form, HStack, Image, ProgressView, Section, Spacer, Text, TextField, VStack, ZStack, useNativeState } from '@expo/ui/swift-ui';
+import { Button, Capsule, Form, HStack, Image, ProgressView, Section, Spacer, Text, TextField, VStack, ZStack, useNativeState } from '@expo/ui/swift-ui';
 import {
-  background, buttonStyle, controlSize, disabled, foregroundStyle, frame, glassEffect, labelStyle, listRowBackground,
+  accessibilityHidden, background, buttonStyle, controlSize, disabled, foregroundStyle, frame, glassEffect, labelStyle, listRowBackground,
   listRowInsets, onSubmit, opacity, padding, shapes, submitLabel,
 } from '@expo/ui/swift-ui/modifiers';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
@@ -111,13 +111,21 @@ export default function Looks() {
                     <Text modifiers={sub}>Your current looks are saved in Earlier</Text>
                   </VStack>
                 ) : (
-                  <RN><Figure src={look.avatar} height={290} /></RN>
+                  <VStack spacing={8}>
+                    <RN><Figure src={look.avatar} height={290} /></RN>
+                    {/* Page dots: the current look is a wider, darker capsule. */}
+                    <HStack spacing={5} modifiers={[accessibilityHidden(true)]}>
+                      {[0, 1, 2].map((n) => (
+                        <Capsule key={n} modifiers={[frame({ width: n === i ? 18 : 6, height: 6 }), foregroundStyle(n === i ? C.label : C.separator)]} />
+                      ))}
+                    </HStack>
+                  </VStack>
                 )}
               </VStack>
               <HStack spacing={8}>
                 <Pill label={busy ? 'Regenerating' : `Look ${i + 1} of 3`} />
                 <Spacer />
-                <IconCTA label={liked[look.id] ? 'Remove from Liked' : 'Save to Liked'} icon={liked[look.id] ? 'heart.fill' : 'heart'} size="small"
+                <IconCTA label={liked[look.id] ? 'Remove from Liked' : 'Save to Liked'} icon={liked[look.id] ? 'heart.fill' : 'heart'} size="regular"
                   onPress={() => setLiked((l) => ({ ...l, [look.id]: !l[look.id] }))} />
                 <CTA label="Try on" icon="figure.stand" kind="gray" small wide={false} onPress={tryOn} />
               </HStack>

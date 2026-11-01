@@ -5,17 +5,19 @@ import { useState } from 'react';
 
 import { TODAY } from '@/data';
 import { MonthGrid, addMonths, monthOf, monthTitle } from '@/month';
-import { fmt, parse, useApp, ymd } from '@/store';
+import { fmt, parse, useApp } from '@/store';
 import { C } from '@/theme';
-import { Pill, RN, Screen, f, sub, tertiary } from '@/ui';
+import { Pill, RN, Screen, f, secondary, tertiary } from '@/ui';
+
+// One step down from the shared `sub`, so this screen reads smaller.
+const sub = [f('caption'), secondary];
 
 export default function Calendar() {
   const { events, items } = useApp();
   const [month, setMonth] = useState(monthOf(TODAY));
   const laundry = items.filter((i) => i.wash || i.iron).length;
-  const weekEnd = parse(TODAY);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-  const week = events.filter((e) => e.date >= TODAY && e.date <= ymd(weekEnd)).sort((a, b) => a.date.localeCompare(b.date));
+  // Events from today to the end of today's month (dates are YYYY-MM-DD, so the first 7 chars are the month).
+  const thisMonth = events.filter((e) => e.date >= TODAY && e.date.slice(0, 7) === TODAY.slice(0, 7)).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <Screen>
@@ -32,11 +34,11 @@ export default function Calendar() {
         <Section
           header={
             <HStack>
-              <Button label="Today" onPress={() => setMonth(monthOf(TODAY))} />
+              <Button label="Today" onPress={() => setMonth(monthOf(TODAY))} modifiers={[f('subheadline')]} />
               <Spacer />
               <HStack spacing={20}>
-                <Button label="Previous month" systemImage="chevron.left" onPress={() => setMonth(addMonths(month, -1))} modifiers={[labelStyle('iconOnly'), buttonStyle('borderless')]} />
-                <Button label="Next month" systemImage="chevron.right" onPress={() => setMonth(addMonths(month, 1))} modifiers={[labelStyle('iconOnly'), buttonStyle('borderless')]} />
+                <Button label="Previous month" systemImage="chevron.left" onPress={() => setMonth(addMonths(month, -1))} modifiers={[labelStyle('iconOnly'), buttonStyle('borderless'), f('subheadline')]} />
+                <Button label="Next month" systemImage="chevron.right" onPress={() => setMonth(addMonths(month, 1))} modifiers={[labelStyle('iconOnly'), buttonStyle('borderless'), f('subheadline')]} />
               </HStack>
             </HStack>
           }
@@ -52,18 +54,18 @@ export default function Calendar() {
           <RN fill><MonthGrid month={month} selected={TODAY} onSelect={(d) => router.push(`/calendar/day/${d}`)} /></RN>
         </Section>
 
-        <Section title="This week">
-          {week.map((e) => (
+        <Section header={<Text modifiers={[f('subheadline', 'semibold')]}>This month</Text>}>
+          {thisMonth.map((e) => (
             <Button key={e.id} onPress={() => router.push(`/calendar/day/${e.date}`)} modifiers={[buttonStyle('plain')]}>
               <HStack spacing={12}>
-                <VStack spacing={0} modifiers={[frame({ width: 46, height: 50 }), background(C.bg, shapes.roundedRectangle({ cornerRadius: 10, roundedCornerStyle: 'continuous' }))]}>
+                <VStack spacing={0} modifiers={[frame({ width: 40, height: 44 }), background(C.bg, shapes.roundedRectangle({ cornerRadius: 10, roundedCornerStyle: 'continuous' }))]}>
                   <Text modifiers={[f('caption2', 'semibold'), foregroundStyle(e.date === TODAY ? C.blue : C.red)]}>{fmt(e.date, { weekday: 'short' }).toUpperCase()}</Text>
-                  <Text modifiers={[f('title3', 'semibold')]}>{`${parse(e.date).getDate()}`}</Text>
+                  <Text modifiers={[f('headline')]}>{`${parse(e.date).getDate()}`}</Text>
                 </VStack>
                 <VStack alignment="leading" spacing={3}>
-                  <Text>{e.title}</Text>
+                  <Text modifiers={[f('subheadline')]}>{e.title}</Text>
                   <Text modifiers={[...sub, lineLimit(1)]}>{`${e.time} · ${e.dressCode}`}</Text>
-                  {e.optional ? <Pill label="Optional" /> : <Pill label={e.outfit ? 'Outfit planned' : 'Needs an outfit'} tone={e.outfit ? 'blue' : 'warn'} />}
+                  {e.optional ? <Pill label="Optional" small /> : <Pill label={e.outfit ? 'Outfit planned' : 'Needs an outfit'} tone={e.outfit ? 'blue' : 'warn'} small />}
                 </VStack>
                 <Spacer />
                 <Image systemName="chevron.right" modifiers={[f('footnote', 'semibold'), tertiary]} />

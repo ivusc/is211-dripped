@@ -9,7 +9,7 @@ import { useState } from 'react';
 import type { Event, Item } from '@/data';
 import { eve, fmt, useApp } from '@/store';
 import { C } from '@/theme';
-import { CTA, Sheet, secondary, setNative } from '@/ui';
+import { CTA, Sheet, f, secondary, setNative } from '@/ui';
 
 type Msg = { me: boolean; text: string; swap?: Item };
 
@@ -78,7 +78,7 @@ export default function AskStylist() {
     <HStack key={key}>
       {m.me && <Spacer minLength={48} />}
       <VStack alignment="leading" spacing={8}>
-        <Text modifiers={[foregroundStyle(m.me ? 'white' : C.label), padding({ horizontal: 14, vertical: 9 }), background(m.me ? C.blue : C.card, bubbleShape)]}>{m.text}</Text>
+        <Text modifiers={[f('subheadline'), foregroundStyle(m.me ? 'white' : C.label), padding({ horizontal: 14, vertical: 9 }), background(m.me ? C.blue : C.card, bubbleShape)]}>{m.text}</Text>
         {m.swap && preview[0] !== m.swap.id && (
           <HStack spacing={8}>
             <CTA label={`Swap to ${lc(m.swap.name)}`} icon="arrow.triangle.2.circlepath" small wide={false} onPress={() => swap(m.swap!)} />
@@ -98,7 +98,7 @@ export default function AskStylist() {
             {msgs.map(bubble)}
             {typing && (
               <HStack>
-                <Text modifiers={[secondary, padding({ horizontal: 14, vertical: 9 }), background(C.card, bubbleShape)]}>Typing…</Text>
+                <Text modifiers={[f('subheadline'), secondary, padding({ horizontal: 14, vertical: 9 }), background(C.card, bubbleShape)]}>Typing…</Text>
                 <Spacer />
               </HStack>
             )}
@@ -113,7 +113,7 @@ export default function AskStylist() {
         </ScrollView>
         <HStack spacing={8} modifiers={[padding({ leading: 16, trailing: 6, vertical: 6 }), glassEffect({ glass: { variant: 'regular' }, shape: 'capsule' }), padding({ horizontal: 16, bottom: 8 })]}>
           <TextField text={text} onTextChange={setDraft} placeholder="Ask about this outfit"
-            modifiers={[submitLabel('send'), onSubmit(() => send(text.value)), padding({ vertical: 8 }), frame({ maxWidth: Infinity })]} />
+            modifiers={[f('subheadline'), submitLabel('send'), onSubmit(() => send(text.value)), padding({ vertical: 8 }), frame({ maxWidth: Infinity })]} />
           <Button label="Send" systemImage="arrow.up" onPress={() => send(text.value)}
             modifiers={[labelStyle('iconOnly'), buttonStyle('borderedProminent'), buttonBorderShape('circle'), disabled(!draft.trim() || typing)]} />
         </HStack>
