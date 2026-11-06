@@ -135,6 +135,7 @@ export function Sheet({
   cancel,
   confirm,
   close,
+  minimise,
   modifiers = [],
   children,
 }: {
@@ -142,6 +143,8 @@ export function Sheet({
   cancel?: BarButton;
   confirm?: BarButton;
   close?: boolean;
+  // Trailing chevron that tucks the sheet away; the screen keeps its own state for when it comes back.
+  minimise?: boolean;
   modifiers?: ModifierConfig[];
   children: ReactNode;
 }) {
@@ -165,6 +168,15 @@ export function Sheet({
             {cancel && (
               <ToolbarItem placement="cancellationAction">
                 <Button label={cancel.label} onPress={cancel.onPress} />
+              </ToolbarItem>
+            )}
+            {minimise && (
+              <ToolbarItem placement="confirmationAction">
+                <Button
+                  label="Minimise"
+                  systemImage="chevron.down"
+                  onPress={() => router.back()}
+                />
               </ToolbarItem>
             )}
             {confirm && (

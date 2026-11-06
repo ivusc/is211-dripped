@@ -4,12 +4,12 @@ import {
   glassEffect, labelStyle, onSubmit, padding, scrollDismissesKeyboard, shapes, submitLabel,
 } from '@expo/ui/swift-ui/modifiers';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import type { Event, Item } from '@/data';
+import { avatarFor, type Event, type Item } from '@/data';
 import { eve, fmt, useApp } from '@/store';
 import { C } from '@/theme';
-import { CTA, Sheet, f, secondary, setNative } from '@/ui';
+import { CTA, Figure, RN, Sheet, f, secondary, setNative } from '@/ui';
 
 type Msg = { me: boolean; text: string; swap?: Item };
 
@@ -39,6 +39,9 @@ function reply(q: string, top: Item, shoes: Item, event: Event, items: Item[]): 
   return { text: `Yes, the ${lc(top.name)} works for the ${lc(event.title)}. It’s neat without looking stiff.` };
 }
 
+// Minimising only hides the sheet; the conversation waits here until it's reopened.
+export let chatLog: Msg[] | undefined;
+
 const bubbleShape = shapes.roundedRectangle({ cornerRadius: 18, roundedCornerStyle: 'continuous' });
 
 export default function AskStylist() {
@@ -48,13 +51,16 @@ export default function AskStylist() {
   // A top he owns but can't wear yet is the one he's likeliest to ask about.
   const flawed = items.find((i) => i.category === 'Tops' && i.flaw && i.id !== top.id);
   const quick = [flawed && `What about my ${lc(flawed.name)}?`, `Is this OK for ${day}?`, 'Will it rain?', 'Swap the shoes?'].filter((q): q is string => !!q);
-  const [msgs, setMsgs] = useState<Msg[]>([{
+  const [msgs, setMsgs] = useState<Msg[]>(() => chatLog ?? [{
     me: false,
     text: `You’re wearing the ${lc(top.name)}, ${lc(item(preview[1]).name)} and ${lc(item(preview[2]).name)} for ${day}’s ${lc(upNext.title)} (${lc(upNext.dressCode)}). What would you like to know?`,
   }]);
+  useEffect(() => { chatLog = msgs; }, [msgs]);
   const [typing, setTyping] = useState(false);
   const text = useNativeState('');
   const [draft, setDraft] = useState('');
+  // The keyboard lifts the sheet over the Preview stage, so a mini outfit stands in for it while typing.
+  const [focused, setFocused] = useState(false);
 
   const send = (q: string) => {
     if (!q.trim() || typing) return;
@@ -91,8 +97,18 @@ export default function AskStylist() {
   );
 
   return (
-    <Sheet title="Ask the Stylist" close>
+    <Sheet title="Ask the Stylist" minimise>
       <VStack spacing={8} modifiers={[background(C.bg)]}>
+        {focused && (
+          <HStack spacing={12} modifiers={[padding({ all: 10 }), background(C.card, bubbleShape), padding({ horizontal: 16, top: 8 })]}>
+            <RN><Figure src={avatarFor(preview)} height={88} /></RN>
+            <VStack alignment="leading" spacing={2}>
+              <Text modifiers={[f('subheadline', 'semibold')]}>Your outfit</Text>
+              <Text modifiers={[f('footnote'), secondary]}>{preview.map((id) => lc(item(id).name)).join(' · ')}</Text>
+            </VStack>
+            <Spacer />
+          </HStack>
+        )}
         <ScrollView modifiers={[defaultScrollAnchor('bottom'), scrollDismissesKeyboard('interactively')]}>
           <VStack spacing={10} modifiers={[padding({ all: 16 })]}>
             {msgs.map(bubble)}
@@ -112,7 +128,7 @@ export default function AskStylist() {
           </HStack>
         </ScrollView>
         <HStack spacing={8} modifiers={[padding({ leading: 16, trailing: 6, vertical: 6 }), glassEffect({ glass: { variant: 'regular' }, shape: 'capsule' }), padding({ horizontal: 16, bottom: 8 })]}>
-          <TextField text={text} onTextChange={setDraft} placeholder="Ask about this outfit"
+          <TextField text={text} onTextChange={setDraft} onFocusChange={setFocused} placeholder="Ask about this outfit"
             modifiers={[f('subheadline'), submitLabel('send'), onSubmit(() => send(text.value)), padding({ vertical: 8 }), frame({ maxWidth: Infinity })]} />
           <Button label="Send" systemImage="arrow.up" onPress={() => send(text.value)}
             modifiers={[labelStyle('iconOnly'), buttonStyle('borderedProminent'), buttonBorderShape('circle'), disabled(!draft.trim() || typing)]} />

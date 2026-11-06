@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="58" height="58" viewBox="0 0 58 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="garment">
+<path id="Body" d="M19.9375 9.0625C25.9792 5.2 32.0208 5.2 38.0625 9.0625L48.9375 15.4062L50.75 43.5H43.5L41.6875 25.375L39.875 48.9375H18.125L16.3125 25.375L14.5 43.5H7.25L9.0625 15.4062L19.9375 9.0625Z" fill="#1E1F22" stroke-width="1.63125" stroke-linejoin="round" stroke="#1C1C1E"/>
+<path id="Shirt" d="M22.5 8.2L29 28L35.5 8.2C31.2 6.6 26.8 6.6 22.5 8.2Z" fill="#F5F5F2" stroke-width="1" stroke-linejoin="round" stroke="#1C1C1E"/>
+<path id="Placket" d="M29 13.4V28" stroke-width="0.9" stroke="#1C1C1E" stroke-opacity="0.6"/>
+<circle cx="29" cy="17.5" r="0.9" fill="#1C1C1E" fill-opacity="0.6"/>
+<circle cx="29" cy="23" r="0.9" fill="#1C1C1E" fill-opacity="0.6"/>
+<path id="Lapel left" d="M20.6 8.6L29 28L24.6 20.4L19.4 17.6Z" fill="#1E1F22" stroke-width="1.1" stroke-linejoin="round" stroke="white" stroke-opacity="0.55"/>
+<path id="Lapel right" d="M37.4 8.6L29 28L33.4 20.4L38.6 17.6Z" fill="#1E1F22" stroke-width="1.1" stroke-linejoin="round" stroke="white" stroke-opacity="0.55"/>
+<path id="Collar left" d="M22 8L29 13.2L26 19Z" fill="#F5F5F2" stroke-width="1.2" stroke-linejoin="round" stroke="#1C1C1E"/>
+<path id="Collar right" d="M36 8L29 13.2L32 19Z" fill="#F5F5F2" stroke-width="1.2" stroke-linejoin="round" stroke="#1C1C1E"/>
+<path id="Front" d="M29 28V48.9" stroke-width="0.9" stroke="white" stroke-opacity="0.55"/>
+<circle cx="29" cy="35" r="1" fill="white" fill-opacity="0.7"/>
+</g>
+</svg>

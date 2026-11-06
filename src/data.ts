@@ -1,5 +1,5 @@
 // Seed data for the prototype. Everything mirrors the content in the Figma file.
-// Caleb's scenario: 19 items are seeded, and he scans the last 2 (SCANNED) during setup, making 21.
+// Caleb's scenario: 20 items are seeded, and he scans the last 2 (SCANNED) during setup, making 22.
 // Events sync in from his iPhone calendar, including Friday's career fair session.
 
 export type Category = 'Tops' | 'Bottoms' | 'Shoes';
@@ -32,7 +32,7 @@ export type Event = {
   synced?: boolean; // came from the phone's calendar, not added in the app
 };
 
-export type Look = { id: string; name: string; avatar: number; pieces: string[] };
+export type Look = { id: string; name: string; avatar: number | string; pieces: string[] };
 
 export const ART: Record<string, number> = {
   'navy-polo': require('../assets/garments/navy-polo.svg'),
@@ -41,6 +41,7 @@ export const ART: Record<string, number> = {
   'grey-hoodie': require('../assets/garments/grey-hoodie.svg'),
   'denim-jacket': require('../assets/garments/denim-jacket.svg'),
   'white-shirt': require('../assets/garments/white-shirt.svg'),
+  'black-blazer': require('../assets/garments/black-blazer.svg'),
   'navy-shirt': require('../assets/garments/navy-shirt.svg'),
   'orientation-tee': require('../assets/garments/orientation-tee.svg'),
   'cream-knit': require('../assets/garments/cream-knit.svg'),
@@ -111,6 +112,7 @@ export const SEED_ITEMS: Item[] = [
   item('grey-hoodie', 'Grey hoodie', 'Tops', 'Hoodie', { tags: ['Casual', 'Campus'] }),
   item('denim-jacket', 'Denim jacket', 'Tops', 'Jacket', { material: 'Denim', colour: 'Blue', tags: ['Casual'] }),
   item('white-shirt', 'White dress shirt', 'Tops', 'Dress shirt', { material: 'Poly cotton', lastWorn: '20 Dec · Wedding', tags: ['Formal', 'Smart casual'] }),
+  item('black-blazer', 'Black blazer', 'Tops', 'Blazer', { material: 'Wool blend', colour: 'Black', lastWorn: '28 Nov · Project pitch', tags: ['Smart casual', 'Formal'] }),
   item('cream-knit', 'Cream knit', 'Tops', 'Sweater', { material: 'Wool', wash: true, iron: true, tags: ['Smart casual'] }),
   item('olive-overshirt', 'Olive overshirt', 'Tops', 'Overshirt', { iron: true, tags: ['Casual'] }),
   item('striped-shirt', 'Striped shirt', 'Tops', 'Shirt', { colour: 'Blue', iron: true, tags: ['Smart casual'] }),
@@ -151,10 +153,38 @@ export const SEED_EVENTS: Event[] = [
   { id: 'dinner', title: 'Dinner & dance', date: '2026-01-27', time: '7:00 – 10:00 PM', dressCode: 'Formal', synced: true },
 ];
 
+// Each garment's colour, matching its artwork in assets/garments.
+const FILL: Record<string, string> = {
+  'beige-pants': '#D8C3A0',
+  'black-jeans': '#23262B',
+  'black-leather-shoes': '#111111',
+  'black-pants': '#2A2D33',
+  'brown-boots': '#6B4226',
+  'cream-knit': '#EDE6D6',
+  'dark-derbies': '#3B2A20',
+  'denim-jacket': '#4A6A92',
+  'green-polo': '#2E8B72',
+  'grey-hoodie': '#9BA1AA',
+  'grey-pants': '#8E8E93',
+  'khaki-chinos': '#A89F7A',
+  'light-blue-shirt': '#BFD3EE',
+  'black-blazer': '#1E1F22',
+  'navy-chinos': '#2C3E66',
+  'navy-polo': '#1F2A44',
+  'navy-shirt': '#243352',
+  'olive-overshirt': '#6B7A4A',
+  'orientation-tee': '#E9A23B',
+  'striped-shirt': '#C9D6E8',
+  'white-shirt': '#F5F5F2',
+  'white-sneakers': '#F4F4F2',
+  'white-tshirt': '#FFFFFF',
+};
+
 // Two rounds of generated looks; "New looks" alternates between them.
 export const LOOK_ROUNDS: Look[][] = [
   [
-    { id: 'l1', name: 'Smart casual', avatar: AVATAR.look1, pieces: ['navy-polo', 'black-pants', 'black-leather-shoes'] },
+    // Look 1 is the career fair look filmed in the scenario: blazer over a white shirt, black trousers. Blazer goes last so pieces[0..2] stay top/bottom/shoes for Preview.
+    { id: 'l1', name: 'Blazer and whites', avatar: dressed(['white-shirt', 'black-pants', 'black-leather-shoes', 'black-blazer']), pieces: ['white-shirt', 'black-pants', 'black-leather-shoes', 'black-blazer'] },
     { id: 'l2', name: 'Light and sharp', avatar: AVATAR.look2, pieces: ['light-blue-shirt', 'beige-pants', 'brown-boots'] },
     { id: 'l3', name: 'Soft knit', avatar: AVATAR.look3, pieces: ['cream-knit', 'grey-pants', 'black-leather-shoes'] },
   ],
@@ -194,36 +224,13 @@ const RENDERS: [string[], number][] = [
   ...DRIPS.map((d) => [d.pieces, d.avatar] as [string[], number]),
 ];
 
-// Each garment's colour, matching its artwork in assets/garments.
-const FILL: Record<string, string> = {
-  'beige-pants': '#D8C3A0',
-  'black-jeans': '#23262B',
-  'black-leather-shoes': '#111111',
-  'black-pants': '#2A2D33',
-  'brown-boots': '#6B4226',
-  'cream-knit': '#EDE6D6',
-  'dark-derbies': '#3B2A20',
-  'denim-jacket': '#4A6A92',
-  'green-polo': '#2E8B72',
-  'grey-hoodie': '#9BA1AA',
-  'grey-pants': '#8E8E93',
-  'khaki-chinos': '#A89F7A',
-  'light-blue-shirt': '#BFD3EE',
-  'navy-chinos': '#2C3E66',
-  'navy-polo': '#1F2A44',
-  'navy-shirt': '#243352',
-  'olive-overshirt': '#6B7A4A',
-  'orientation-tee': '#E9A23B',
-  'striped-shirt': '#C9D6E8',
-  'white-shirt': '#F5F5F2',
-  'white-sneakers': '#F4F4F2',
-  'white-tshirt': '#FFFFFF',
-};
 
 // The avatar figure from the Figma renders, with the top, trousers and shoes filled in from the chosen pieces.
 // ponytail: one silhouette for every top; collared tops just get a placket line. Add per-kind shapes if testers notice.
 export function dressed(pieces: string[]): string {
-  const [top, bottom, shoes] = pieces.map((id) => id.replace(/-\d+$/, ''));
+  const ids = pieces.map((id) => id.replace(/-\d+$/, ''));
+  const [top, bottom, shoes] = ids;
+  const jacket = ids.find((id) => id !== top && CATALOG.find((i) => i.id === id)?.kind === 'Blazer');
   const fill = (id: string, fallback: string) => FILL[id] ?? fallback;
   const t = fill(top, '#FFFFFF');
   const light = parseInt(t.slice(1, 3), 16) + parseInt(t.slice(3, 5), 16) + parseInt(t.slice(5, 7), 16) > 600;
@@ -241,9 +248,10 @@ export function dressed(pieces: string[]): string {
 <circle cx="19.34" cy="115.1" r="5.68" fill="#D1D1D6"/>
 <circle cx="94.66" cy="115.1" r="5.68" fill="#D1D1D6"/>
 <path d="M31.421 56.842C48.474 52.105 65.526 52.105 82.579 56.842L96.79 106.579L84 110.842L79.737 85.263V140.684H34.263V85.263L30 110.842L17.21 106.579L31.421 56.842Z" fill="${t}" ${line}/>
-${collar && !polo ? `<path d="M47.053 54L57 66.79L66.947 54" stroke-width="2.13" stroke="${light ? '#8E8E93' : 'white'}" stroke-opacity="${light ? 0.8 : 0.35}"/>` : ''}
-${polo ? `<path d="M55 61H59V78H55Z" fill="${t}" stroke-width="0.7" ${detail}/><circle cx="57" cy="67" r="1.1" fill="${light ? '#1C1C1E' : 'white'}" fill-opacity="0.6"/><circle cx="57" cy="73" r="1.1" fill="${light ? '#1C1C1E' : 'white'}" fill-opacity="0.6"/><path d="M47 54L57 61L51.5 66Q48 62 47 54Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/><path d="M67 54L57 61L62.5 66Q66 62 67 54Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/>` : ''}
-${dress ? `<path d="M57 140V65" stroke-width="0.7" ${detail}/>${[80, 97, 114, 131].map((y) => `<circle cx="57" cy="${y}" r="1.1" fill="${light ? '#1C1C1E' : 'white'}" fill-opacity="0.5"/>`).join('')}<path d="M46.5 53.6L57 65L50.5 66.5Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/><path d="M67.5 53.6L57 65L63.5 66.5Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/>` : ''}
+${jacket ? `<path d="M31.421 56.842C48.474 52.105 65.526 52.105 82.579 56.842L96.79 106.579L84 110.842L79.737 85.263V140.684H34.263V85.263L30 110.842L17.21 106.579L31.421 56.842Z" fill="${FILL[jacket]}" ${line}/><path d="M48 54.5L57 92L66 54.5Q57 52.6 48 54.5Z" fill="${t}" stroke-width="0.7" stroke="#1C1C1E"/><path d="M57 65V92" stroke-width="0.7" stroke="#1C1C1E" stroke-opacity="0.5"/><circle cx="57" cy="73" r="1" fill="#1C1C1E" fill-opacity="0.5"/><circle cx="57" cy="83" r="1" fill="#1C1C1E" fill-opacity="0.5"/><path d="M45 55L57 92L50.5 75L43 69Z" fill="${FILL[jacket]}" stroke-width="0.85" stroke-linejoin="round" stroke="white" stroke-opacity="0.55"/><path d="M69 55L57 92L63.5 75L71 69Z" fill="${FILL[jacket]}" stroke-width="0.85" stroke-linejoin="round" stroke="white" stroke-opacity="0.55"/><path d="M46.5 53.5L57 63L52 71Z" fill="${t}" stroke-width="1" stroke-linejoin="round" stroke="#1C1C1E"/><path d="M67.5 53.5L57 63L62 71Z" fill="${t}" stroke-width="1" stroke-linejoin="round" stroke="#1C1C1E"/><path d="M57 92V140" stroke-width="0.7" stroke="white" stroke-opacity="0.55"/><circle cx="57" cy="106" r="1.3" fill="white" fill-opacity="0.7"/>` : ''}
+${!jacket && collar && !polo ? `<path d="M47.053 54L57 66.79L66.947 54" stroke-width="2.13" stroke="${light ? '#8E8E93' : 'white'}" stroke-opacity="${light ? 0.8 : 0.35}"/>` : ''}
+${!jacket && polo ? `<path d="M55 61H59V78H55Z" fill="${t}" stroke-width="0.7" ${detail}/><circle cx="57" cy="67" r="1.1" fill="${light ? '#1C1C1E' : 'white'}" fill-opacity="0.6"/><circle cx="57" cy="73" r="1.1" fill="${light ? '#1C1C1E' : 'white'}" fill-opacity="0.6"/><path d="M47 54L57 61L51.5 66Q48 62 47 54Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/><path d="M67 54L57 61L62.5 66Q66 62 67 54Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/>` : ''}
+${!jacket && dress ? `<path d="M57 140V65" stroke-width="0.7" ${detail}/>${[80, 97, 114, 131].map((y) => `<circle cx="57" cy="${y}" r="1.1" fill="${light ? '#1C1C1E' : 'white'}" fill-opacity="0.5"/>`).join('')}<path d="M46.5 53.6L57 65L50.5 66.5Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/><path d="M67.5 53.6L57 65L63.5 66.5Z" fill="${t}" stroke-width="0.85" stroke-linejoin="round" ${flap}/>` : ''}
 <path d="M34.263 139.263H79.737L78.316 241.579H61.263L57 164.842L52.737 241.579H35.684L34.263 139.263Z" fill="${fill(bottom, '#2A2D33')}" ${line}/>
 <path d="M32.842 241.579H54.158V248.684C54.158 251.526 52.737 252.947 49.895 252.947H27.158C27.158 248.211 29.053 244.421 32.842 241.579Z" fill="${fill(shoes, '#111111')}" stroke-width="0.71" stroke="#1C1C1E"/>
 <path d="M59.842 241.579H81.158C84.947 244.421 86.842 248.211 86.842 252.947H64.105C61.263 252.947 59.842 251.526 59.842 248.684V241.579Z" fill="${fill(shoes, '#111111')}" stroke-width="0.71" stroke="#1C1C1E"/>

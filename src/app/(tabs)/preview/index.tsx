@@ -28,6 +28,7 @@ import {
 import { Stack, router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { chatLog } from "@/app/ask-stylist";
 import { avatarFor, type Category, type Item } from "@/data";
 import { fmt, isReady, statusLabel, useApp } from "@/store";
 import { C } from "@/theme";
@@ -45,7 +46,9 @@ export default function Preview() {
     live.current = preview;
   }, [preview]);
   const [pin, setPin] = useState(preview);
-  useFocusEffect(useCallback(() => setPin(live.current), []));
+  // A minimised stylist chat is picked up again when the sheet closes.
+  const [chat, setChat] = useState(chatLog);
+  useFocusEffect(useCallback(() => { setPin(live.current); setChat(chatLog); }, []));
   const rank = (i: Item) => (i.id === pin[slot] ? -1 : Number(!isReady(i)));
   const options = items
     .filter((i) => i.category === cat)
@@ -213,8 +216,8 @@ export default function Preview() {
 
         <Section>
           <Row
-            title="Not sure? Ask the stylist"
-            subtitle={`“Is this OK for ${day}?”`}
+            title={chat ? "Continue your stylist chat" : "Not sure? Ask the stylist"}
+            subtitle={chat ? "Pick up where you left off" : `“Is this OK for ${day}?”`}
             icon="sparkles"
             chevron
             onPress={() => router.push("/ask-stylist")}
