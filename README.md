@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/images/splash-icon.png" alt="DRIPPED logo" width="200" />
+</p>
+
 # DRIPPED
 
 > Your wardrobe, styled for every event.

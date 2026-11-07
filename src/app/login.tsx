@@ -1,13 +1,18 @@
 import { Button, Form, HStack, Image, SecureField, Section, Text, TextField, VStack } from '@expo/ui/swift-ui';
 import {
-  autocorrectionDisabled, background, buttonBorderShape, buttonStyle, controlSize, font, foregroundStyle, frame, kerning, keyboardType, listRowBackground,
-  multilineTextAlignment, padding, shapes, submitLabel, onSubmit, textContentType, textInputAutocapitalization, tint,
+  autocorrectionDisabled, buttonBorderShape, buttonStyle, controlSize, font, foregroundStyle, frame, kerning, keyboardType, listRowBackground,
+  multilineTextAlignment, padding, submitLabel, onSubmit, textContentType, textInputAutocapitalization, tint,
 } from '@expo/ui/swift-ui/modifiers';
+import { Image as ExpoImage } from 'expo-image';
 import { useState } from 'react';
+import { StyleSheet } from 'react-native';
 
 import { useApp } from '@/store';
 import { C } from '@/theme';
-import { Actions, CTA, Screen, f, secondary } from '@/ui';
+import { Actions, CTA, RN, Screen, f, secondary } from '@/ui';
+
+// Light cyan → royal blue → navy, sampled from the logo.
+const LOGO_GRADIENT = foregroundStyle({ type: 'linearGradient', colors: ['#33BBF7', '#0A7ADB', '#0D43A8'], startPoint: { x: 0, y: 0.5 }, endPoint: { x: 1, y: 0.5 } });
 
 export default function Login() {
   const { setLoggedIn } = useApp();
@@ -27,9 +32,11 @@ export default function Login() {
       <Form>
         <Section modifiers={[listRowBackground('clear')]}>
           <VStack spacing={10} modifiers={[frame({ maxWidth: Infinity }), padding({ top: 32, bottom: 8 })]}>
-            <Image systemName="hanger" size={40} color="white"
-              modifiers={[frame({ width: 76, height: 76 }), background(C.blue, shapes.roundedRectangle({ cornerRadius: 18, roundedCornerStyle: 'continuous' }))]} />
-            <Text modifiers={[font({ textStyle: 'largeTitle', weight: 'heavy' }), kerning(3)]}>DRIPPED</Text>
+            <RN>
+              <ExpoImage source={require('../../assets/images/icon.png')} contentFit="cover"
+                style={{ width: 96, height: 96, borderRadius: 22, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator }} />
+            </RN>
+            <Text modifiers={[font({ textStyle: 'largeTitle', weight: 'heavy' }), kerning(3), LOGO_GRADIENT]}>DRIPPED</Text>
             <Text modifiers={[f('subheadline'), secondary, multilineTextAlignment('center')]}>Your wardrobe, styled for every event.</Text>
           </VStack>
         </Section>
