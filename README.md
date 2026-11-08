@@ -4,7 +4,7 @@
 
 # DRIPPED
 
-> Your wardrobe, styled for every event.
+> Don't stay chopped, stay DRIPPED
 
 A high-fidelity, iOS mobile prototype built for **IS211 IDP Iteration 2**. It is a clickable prototype, not a production app: all data is seeded and the stylist AI is scripted.
 
